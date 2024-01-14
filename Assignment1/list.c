@@ -12,14 +12,18 @@ List* List_create(){
     // initial setup of the data structure (first call of List_create())
     if (initialSetup){
         for (int i = 0; i < LIST_MAX_NUM_HEADS; i++){
-            masterList[i]->head = NULL;               // initialize everything to NULL (is this necessary?) (probably idk)    
+            masterList[i]->head = NULL;               // initialize everything to NULL  
         }
         initialSetup = false;   
     }
 
     if ((numList - 1 ) < LIST_MAX_NUM_NODES){
-        masterList[listSize]->head = &list[1];           // head to the new list. NEED TO FIX LMAO
+        masterList[listSize]->head = &list[/*empty list node, need to figure out how this works :D*/1];           // head to the new list. need to find an empty list node. 
         newList = masterList[listSize];
+
+        Node* listInit = newList->head;
+        listInit->prev = NULL;
+        listInit->next = NULL;
         numList++;
     }
     
