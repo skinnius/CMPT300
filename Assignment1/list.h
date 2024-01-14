@@ -29,7 +29,7 @@ typedef struct List_s List;
 struct List_s{
     // TODO: You should change this!
     Node* head;
-    //int current = 0;       
+    Node* current;          // current item (node), used as an iterator       
 };
 
 // Maximum number of unique lists the system can support
