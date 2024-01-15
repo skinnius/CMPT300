@@ -49,12 +49,10 @@ List* List_create(){
     }
 
     if ((numList - 1 ) < LIST_MAX_NUM_HEADS){
-        availableLists[listSize].head = nodeHead;           // head to the new list. need to find an empty list node. 
-        newList = &availableLists[listSize];
 
-        Node* listInit = newList->head;
-        listInit->prev = NULL;
-        listInit->next = NULL;
+        listHead = listHead->next;          // give the new list the memory position of the next available "list position"
+        newList = listHead;
+        newList->head = NULL;
         numList++;
     }
     
