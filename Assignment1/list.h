@@ -25,7 +25,9 @@ enum ListOutOfBounds {
 typedef struct List_s List;
 struct List_s{
     // TODO: You should change this!
+    int listSize;
     Node* head;
+    Node* tail;
     Node* current;          // current item (node), used as an iterator
     List* prev;
     List* next;       

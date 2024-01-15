@@ -3,7 +3,6 @@
 
 static List availableLists[LIST_MAX_NUM_HEADS];    // global statically allocated list of possible unique Lists --> Array of List pointers
 static Node availableNodes[LIST_MAX_NUM_NODES];         // global statically allocated list of nodes.
-static int listSize = 0;
 static int numList = 0;
 static bool initialSetup = true;
 static Node* nodeHead;
@@ -18,9 +17,16 @@ List* List_create(){
 
     // initial setup of the data structure (first call of List_create())
     if (initialSetup){
-        for (int i = 1; i < LIST_MAX_NUM_HEADS - 1; i++){
+        for (int i = 0; i < LIST_MAX_NUM_HEADS; i++){
             availableLists[i].head = NULL;               // initialize everything to NULL  
+            availableLists[i].tail = NULL;
             availableLists[i].current = NULL;
+            availableLists[i].listSize = 0;
+
+            if (i != 0 && i != LIST_MAX_NUM_HEADS - 1){
+                availableLists[i].next = &availableLists[i + 1];
+                availableLists[i].prev = &availableLists[i - 1];
+            }
         }
 
         listHead = &availableLists[0];
@@ -33,8 +39,14 @@ List* List_create(){
 
 
         for (int i = 1; i < LIST_MAX_NUM_NODES - 1; i++){
-            availableNodes[i].next = &availableNodes[i + 1];
-            availableNodes[i].prev = &availableNodes[i - 1];
+            availableNodes[i].item = NULL;
+            availableNodes[i].next = NULL;
+            availableNodes[i].prev = NULL;
+
+            if (i != 0 && i != LIST_MAX_NUM_NODES - 1){
+                availableNodes[i].next = &availableNodes[i + 1];
+                availableNodes[i].prev = &availableNodes[i - 1];
+            }
         }
 
         nodeHead = &availableNodes[0];
@@ -48,11 +60,10 @@ List* List_create(){
         initialSetup = false;
     }
 
-    if ((numList - 1 ) < LIST_MAX_NUM_HEADS){
+    if (numList < LIST_MAX_NUM_HEADS){
 
         listHead = listHead->next;          // give the new list the memory position of the next available "list position"
         newList = listHead;
-        newList->head = NULL;
         numList++;
     }
     
@@ -61,5 +72,16 @@ List* List_create(){
 
 int List_count(List* pList){               // returns number of elements in the list, O(1).
     assert(pList != NULL);
-    return listSize;
+    return pList->listSize;
 }
+
+void* List_last(List* pList){
+    if (pList->listSize != 0){
+        pList->current = pList->tail;
+        return pList->current;
+    }
+    return NULL;
+}
+
+
+
