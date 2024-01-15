@@ -9,9 +9,6 @@
 #define LIST_SUCCESS 0
 #define LIST_FAIL -1
 
-static int listSize = 0;
-static int numList = 0;
-static bool initialSetup = true;
 
 typedef struct Node_s Node;
 struct Node_s {
@@ -29,7 +26,9 @@ typedef struct List_s List;
 struct List_s{
     // TODO: You should change this!
     Node* head;
-    Node* current;          // current item (node), used as an iterator       
+    Node* current;          // current item (node), used as an iterator
+    List* prev;
+    List* next;       
 };
 
 // Maximum number of unique lists the system can support
