@@ -75,13 +75,48 @@ int List_count(List* pList){               // returns number of elements in the 
     return pList->listSize;
 }
 
+
+void* List_first(List* pList){
+    assert(pList != NULL);
+    if (pList->listSize != 0){
+        pList->current = pList->head;
+        return pList->current;
+    }
+    return NULL;
+}
+
 void* List_last(List* pList){
+    assert(pList != NULL);
     if (pList->listSize != 0){
         pList->current = pList->tail;
         return pList->current;
     }
     return NULL;
 }
+
+void* List_next(List* pList){
+    assert(pList != NULL);
+    if (pList->next != NULL){
+        pList->current = pList->next;
+        return pList->current;
+    }
+    pList->current = LIST_OOB_END;
+    return NULL;
+}
+
+void* List_prev(List* pList){
+    assert(pList != NULL);
+    if (pList->prev != NULL){
+        pList->current = pList->prev;
+        return pList->current;
+    }
+    pList->current = LIST_OOB_START;
+    return NULL;
+}
+
+
+
+
 
 
 
