@@ -4,6 +4,7 @@
 static List availableLists[LIST_MAX_NUM_HEADS];    // global statically allocated list of possible unique Lists --> Array of List pointers
 static Node availableNodes[LIST_MAX_NUM_NODES];         // global statically allocated list of nodes.
 static int numList = 0;
+static int numNodes = 0;
 static bool initialSetup = true;
 static Node* nodeHead;
 static Node* nodeTail;
@@ -33,9 +34,9 @@ List* List_create(){
         listHead->next = &availableLists[1];
         listHead->prev = NULL;
 
-        listTail = &availableNodes[LIST_MAX_NUM_HEADS - 1];
+        listTail = &availableLists[LIST_MAX_NUM_HEADS - 1];
         listTail->next = NULL;
-        listTail->prev = &availableNodes[LIST_MAX_NUM_HEADS];
+        listTail->prev = &availableLists[LIST_MAX_NUM_HEADS];
 
 
         for (int i = 1; i < LIST_MAX_NUM_NODES - 1; i++){
@@ -114,9 +115,26 @@ void* List_prev(List* pList){
     return NULL;
 }
 
+void* List_curr(List* pList){
+    assert(pList != NULL);
+    return pList->current;
+}
 
 
+int List_append(List* pList, void* pItem){
+    assert(pList != NULL);
+    Node* lastItem = pList->tail;
 
+    if (numNodes < LIST_MAX_NUM_NODES){
+        lastItem->next = nodeHead;
+        Node* newItem = lastItem->next;
+        nodeHead = nodeHead->next;
 
+        numNodes++;
+        
+    }
+
+    return 0;
+}
 
 
