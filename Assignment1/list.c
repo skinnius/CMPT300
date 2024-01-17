@@ -23,40 +23,31 @@ List* List_create(){
             availableLists[i].tail = NULL;
             availableLists[i].current = NULL;
             availableLists[i].listSize = 0;
+            availableLists[i].next = NULL;
+            availableLists[i].prev = NULL;
 
-            if (i != 0 && i != LIST_MAX_NUM_HEADS - 1){
-                availableLists[i].next = &availableLists[i + 1];
+            if (i != 0){
                 availableLists[i].prev = &availableLists[i - 1];
+            }
+
+            if (i != LIST_MAX_NUM_HEADS - 1){
+                availableLists[i].next = &availableLists[i + 1];
             }
         }
 
-        listHead = &availableLists[0];
-        listHead->next = &availableLists[1];
-        listHead->prev = NULL;
-
-        listTail = &availableLists[LIST_MAX_NUM_HEADS - 1];
-        listTail->next = NULL;
-        listTail->prev = &availableLists[LIST_MAX_NUM_HEADS];
-
-
-        for (int i = 1; i < LIST_MAX_NUM_NODES - 1; i++){
+        for (int i = 0; i < LIST_MAX_NUM_NODES - 1; i++){
             availableNodes[i].item = NULL;
             availableNodes[i].next = NULL;
             availableNodes[i].prev = NULL;
 
-            if (i != 0 && i != LIST_MAX_NUM_NODES - 1){
-                availableNodes[i].next = &availableNodes[i + 1];
+            if (i != 0){
                 availableNodes[i].prev = &availableNodes[i - 1];
             }
+
+            if (i != LIST_MAX_NUM_NODES - 1){
+                availableNodes[i].next = &availableNodes[i + 1];
+            }
         }
-
-        nodeHead = &availableNodes[0];
-        nodeHead->next = &availableNodes[1];
-        nodeHead->prev = NULL;
-
-        nodeTail = &availableNodes[LIST_MAX_NUM_NODES - 1];
-        nodeTail->next = NULL;
-        nodeTail->prev = &availableNodes[LIST_MAX_NUM_NODES];
 
         initialSetup = false;
     }
