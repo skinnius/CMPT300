@@ -30,11 +30,9 @@ List* List_create(){
             if (i != 0){
                 availableLists[i].prev = &availableLists[i - 1];
             }
-
             if (i != LIST_MAX_NUM_HEADS - 1){
                 availableLists[i].next = &availableLists[i + 1];
             }
-
             listHead = &availableLists[0];
             listTail = &availableLists[LIST_MAX_NUM_HEADS - 1];
         }
@@ -47,11 +45,9 @@ List* List_create(){
             if (i != 0){
                 availableNodes[i].prev = &availableNodes[i - 1];
             }
-
             if (i != LIST_MAX_NUM_NODES - 1){
                 availableNodes[i].next = &availableNodes[i + 1];
             }
-
             nodeHead = &availableNodes[0];
             nodeTail = &availableNodes[LIST_MAX_NUM_NODES - 1];
         }
@@ -60,7 +56,6 @@ List* List_create(){
     }
 
     if (numList < LIST_MAX_NUM_HEADS){
-
         listHead = listHead->next;          // give the new list the memory position of the next available "list position"
         newList = listHead;
         numList++;
@@ -132,6 +127,120 @@ void* List_curr(List* pList){
     return pList->current;
 }
 
+// Adds the new item to pList directly after the current item, and makes item the current item. 
+// If the current pointer is before the start of the pList, the item is added at the start. If 
+// the current pointer is beyond the end of the pList, the item is added at the end. 
+// Returns 0 on success, -1 on failure.
+int List_insert_after(List* pList, void* pItem){
+    assert(pList != NULL);
+
+    if (numNodes >= LIST_MAX_NUM_NODES){
+        return LIST_FAIL;
+    }
+
+    Node* newNode = nodeHead;
+    nodeHead = nodeHead->next;
+
+    if (pList->current == LIST_OOB_START){          // case 1: current pointer is before the list start
+        newNode->next = pList->head;
+        pList->head->prev = newNode;
+        newNode->prev = NULL;
+        newNode->item = pItem;
+
+        pList->head = newNode;
+    }
+
+    else if (pList->current == LIST_OOB_END){            // case 2: current pointer is after the list end
+        newNode->next = NULL;
+        newNode->prev = pList->tail;
+        pList->tail->next = newNode;
+        newNode->item = pItem;
+
+        pList->tail = newNode;
+    }   
+
+    else if (pList->currNode == pList->tail){           // case 3: current pointer is a tail
+        Node* temp = pList->currNode;
+        newNode->next = NULL;
+        newNode->prev = temp;
+        temp->next = newNode;
+        newNode->item = pItem;
+
+        pList->tail = newNode;
+    }
+
+    // general case
+    else{
+        Node* temp = pList->currNode;
+        newNode->next = temp->next;
+        newNode->prev = temp;
+        temp->next->prev = newNode;
+        temp->next = newNode;
+    }
+
+    pList->current = newNode->item;
+    pList->currNode = newNode;        
+    return LIST_SUCCESS;
+}
+
+// Adds item to pList directly before the current item, and makes the new item the current one. 
+// If the current pointer is before the start of the pList, the item is added at the start. 
+// If the current pointer is beyond the end of the pList, the item is added at the end. 
+// Returns 0 on success, -1 on failure.
+int List_insert_before(List* pList, void* pItem){
+    assert(pList != NULL);
+
+    if (numNodes >= LIST_MAX_NUM_NODES){
+        return LIST_FAIL;
+    }
+
+    Node* newNode = nodeHead;
+    nodeHead = nodeHead->next;
+
+    if (pList->current == LIST_OOB_START){          // case 1: current pointer is before the list start
+        newNode->next = pList->head;
+        pList->head->prev = newNode;
+        newNode->prev = NULL;
+        newNode->item = pItem;
+
+        pList->head = newNode;
+    }
+
+    else if (pList->current == LIST_OOB_END){            // case 2: current pointer is after the list end
+        newNode->next = NULL;
+        newNode->prev = pList->tail;
+        pList->tail->next = newNode;
+        newNode->item = pItem;
+
+        pList->tail = newNode;
+    }   
+
+    else if (pList->currNode == pList->head){           // case 3: current pointer is a tail
+        Node* temp = pList->currNode;
+        newNode->next = temp;
+        newNode->prev = NULL;
+        temp->prev = newNode;
+        newNode->item = pItem;
+        
+        pList->head = newNode;
+    }
+
+    // general case
+    else{
+        Node* temp = pList->currNode;
+        newNode->next = temp;
+        newNode->prev = temp->prev;
+        temp->prev->next = newNode;
+        temp->prev = newNode;
+    }
+
+    pList->current = newNode->item;
+    pList->currNode = newNode;        
+    return LIST_SUCCESS;
+}
+
+
+
 // Adds item to the end of pList, and makes the new item the current one. 
 // Returns 0 on success, -1 on failure.
 int List_append(List* pList, void* pItem){
@@ -146,11 +255,13 @@ int List_append(List* pList, void* pItem){
         newItem->prev = temp;
         newItem->item = pItem;
         numNodes++;
-        return 0;
+        return LIST_SUCCESS;
     }
 
-    return -1;
+    return LIST_FAIL;
 }
+
+
 
 
 
