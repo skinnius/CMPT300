@@ -97,11 +97,19 @@ void* List_last(List* pList){
 // is returned and the current item is set to be beyond end of pList.
 void* List_next(List* pList){
     assert(pList != NULL);
-    if (pList->currNode->next != NULL){
+
+    if (pList->current == LIST_OOB_START){
+        pList->currNode = pList->head;
+        pList->current = pList->head->item;
+        return pList->current;
+    }
+
+    else if (pList->currNode->next != NULL){
         pList->currNode = pList->currNode->next;
         pList->current = pList->currNode->item;
         return pList->current;
     }
+
     pList->current = LIST_OOB_END;
     return NULL;
 }
@@ -111,7 +119,15 @@ void* List_next(List* pList){
 // is returned and the current item is set to be before the start of pList.
 void* List_prev(List* pList){
     assert(pList != NULL);
-    if (pList->prev != NULL){
+
+    
+    if (pList->current == LIST_OOB_END){
+        pList->currNode = pList->tail;
+        pList->current = pList->tail->item;
+        return pList->current;
+    }
+
+    else if (pList->currNode->prev != NULL){
         pList->currNode = pList->prev;
         pList->current = pList->currNode->item;
         return pList->current;
@@ -177,7 +193,7 @@ int List_insert_after(List* pList, void* pItem){
         temp->next->prev = newNode;
         temp->next = newNode;
     }
-
+    numNodes++;
     pList->current = newNode->item;
     pList->currNode = newNode;        
     return LIST_SUCCESS;
@@ -233,12 +249,11 @@ int List_insert_before(List* pList, void* pItem){
         temp->prev->next = newNode;
         temp->prev = newNode;
     }
-
+    numNodes++;
     pList->current = newNode->item;
     pList->currNode = newNode;        
     return LIST_SUCCESS;
 }
-
 
 
 // Adds item to the end of pList, and makes the new item the current one. 
@@ -248,12 +263,16 @@ int List_append(List* pList, void* pItem){
     Node* temp = pList->tail;
 
     if (numNodes < LIST_MAX_NUM_NODES){
-        temp->next = nodeHead;
         Node* newItem = nodeHead;
         nodeHead = nodeHead->next;
 
+        temp->next = newItem;
         newItem->prev = temp;
         newItem->item = pItem;
+        newItem->next = NULL;
+        pList->tail = newItem;
+
+
         numNodes++;
         return LIST_SUCCESS;
     }
@@ -261,6 +280,30 @@ int List_append(List* pList, void* pItem){
     return LIST_FAIL;
 }
 
+
+// START HERE!!!!!!!!!!
+
+
+
+// Adds item to the front of pList, and makes the new item the current one. 
+// Returns 0 on success, -1 on failure.
+int List_prepend(List* pList, void* pItem){
+    assert(pList != NULL);
+    Node* temp = pList->head;
+
+    if (numNodes < LIST_MAX_NUM_NODES){
+        Node* newItem = nodeHead;
+        nodeHead = nodeHead->next;
+
+        temp->prev = 
+        newItem->prev = NULL;
+        newItem->item = pItem;
+        numNodes++;
+        return LIST_SUCCESS;
+    }
+
+    return LIST_FAIL;
+}
 
 
 
