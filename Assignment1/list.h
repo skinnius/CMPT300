@@ -28,7 +28,8 @@ struct List_s{
     int listSize;
     Node* head;
     Node* tail;
-    Node* current;          // current item (node), used as an iterator
+    Node* currNode;
+    void* current;
     List* prev;
     List* next;       
 };
