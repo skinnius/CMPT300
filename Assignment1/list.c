@@ -58,6 +58,14 @@ static void insertIntoEmptyList(List* pList, Node* newNode, void* pItem){
 
 static Node* popHead(List* pList){
     Node* oldHead = pList->head;
+
+    if (List_count(pList) == 1){
+        pList->head = NULL;
+        pList->tail = NULL;
+        pList->current = LIST_OOB_START;
+        pList->currNode = NULL;
+    }
+
     pList->head = pList->head->next;
     pList->head->prev = NULL;
 
@@ -71,6 +79,16 @@ static Node* popTail(List* pList){
 
     return oldTail;
 }
+
+static void freeNewNode(Node* node){                   // questionable function lmao DELETE THIS COMMENT BEFORE SUBMITTING 
+    nodeTail->next = node;
+    node->prev = nodeTail;
+    node->next = NULL;
+    nodeTail = node;
+    node->item = NULL;
+}
+
+
 // Makes a new, empty list, and returns its reference on success. 
 // Returns a NULL pointer on failure.
 List* List_create(){
@@ -85,11 +103,7 @@ List* List_create(){
             availableLists[i].current = LIST_OOB_START;
             availableLists[i].listSize = 0;
             availableLists[i].next = NULL;
-            availableLists[i].prev = NULL;
 
-            if (i != 0){
-                availableLists[i].prev = &availableLists[i - 1];
-            }
             if (i != LIST_MAX_NUM_HEADS - 1){
                 availableLists[i].next = &availableLists[i + 1];
             }
@@ -160,6 +174,11 @@ void* List_next(List* pList){
     assert(pList != NULL);
 
     if (pList->current == LIST_OOB_START){          // Case 1: current pointer OOB
+        if (List_count(pList) == 0){                // Case 1.1: current pointer OOB for empty list
+            pList->current = LIST_OOB_END;
+            return pList->current;
+        }
+
         setNewCurrent(pList, pList->head);
         return pList->current;
     }
@@ -180,8 +199,11 @@ void* List_next(List* pList){
 void* List_prev(List* pList){
     assert(pList != NULL);
 
-    
     if (pList->current == LIST_OOB_END){
+        if (List_count(pList) == 0){
+            pList->current = LIST_OOB_START;
+            return pList->current;
+        }
         setNewCurrent(pList, pList->tail);
         return pList->current;
     }
@@ -191,7 +213,7 @@ void* List_prev(List* pList){
         return pList->current;
     }
 
-    pList->current = LIST_OOB_START;                // consider setting currNode to NULL; however, might cause further problems
+    pList->current = LIST_OOB_START;               
     pList->currNode = NULL;
     return NULL;
 }
@@ -314,54 +336,72 @@ int List_prepend(List* pList, void* pItem){
     return LIST_SUCCESS;
 }
 
+// START HEREEEEEEE
+
+
 // Return current item and take it out of pList. Make the next item the current one.
 // If the current pointer is before the start of the pList, or beyond the end of the pList,
 // then do not change the pList and return NULL.
 void* List_remove(List* pList){
     assert(pList != NULL);
-    void* currVal = pList->current;
+    void* currItem = pList->current;
+    Node* nodeToBeFreed = NULL;
 
-    if (pList->current == LIST_OOB_START || pList->current == LIST_OOB_END){            // first check for OOB
+    if (pList->current == LIST_OOB_START || pList->current == LIST_OOB_END){            // first check for OOB (covers empty list check)
         return NULL;
     }
     
     if (pList->currNode == pList->head){                // case 1: removing head node
-        Node* oldHead = popHead(pList);
+        nodeToBeFreed = popHead(pList);
         setNewCurrent(pList, pList->head);
-        currVal = oldHead->item;
+        currItem = nodeToBeFreed->item;
         
     }
 
     else if (pList->currNode == pList->tail){         // case 2: removing tail node
-        Node* oldTail = popTail(pList);
+        nodeToBeFreed = popTail(pList);
         pList->currNode = NULL;                         
         pList->current = LIST_OOB_END;
-        currVal = oldTail->item;
+        currItem = nodeToBeFreed->item;
     }
 
-    else{                    // general case
-        Node* oldCurr = pList->currNode;
+    else{                                            // general case
+        nodeToBeFreed = pList->currNode;
         Node* prevNode = pList->currNode->prev;
         Node* nextNode = pList->currNode->next;
         prevNode->next = nextNode;
         nextNode->prev = prevNode;
 
         setNewCurrent(pList, nextNode);
-        currVal = oldCurr->item;
+        currItem = nodeToBeFreed->item;
     }
 
+    // making the nodes "free"
+    freeNewNode(nodeToBeFreed);
+    decreaseListSize(pList);
+    return currItem;
+}
+
+
+// Return last item and take it out of pList. Make the new last item the current one.
+// Return NULL if pList is initially empty.
+void* List_trim(List* pList)
+{
+    if (List_count(pList) == 0){
+        return NULL;
+    }
+    Node* nodeToBeFreed = popTail(pList);
+    void* currItem = nodeToBeFreed->item;
+
+    setNewCurrent(pList, pList->tail);
+    freeNewNode(nodeToBeFreed);
+    decreaseListSize(pList);
     
-
-
-
-
-
-
-
-
-
+    return currItem;
 
 }
+
+
 
 
 

@@ -30,7 +30,6 @@ struct List_s{
     Node* tail;
     Node* currNode;
     void* current;
-    List* prev;
     List* next;       
 };
 
