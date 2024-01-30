@@ -56,6 +56,7 @@ static void insertIntoEmptyList(List* pList, Node* newNode, void* pItem){
     pList->head = newNode;
 }
 
+
 static Node* popHead(List* pList){
     Node* oldHead = pList->head;
 
@@ -64,6 +65,7 @@ static Node* popHead(List* pList){
         pList->tail = NULL;
         pList->current = LIST_OOB_START;
         pList->currNode = NULL;
+        return oldHead;
     }
 
     pList->head = pList->head->next;
@@ -74,6 +76,15 @@ static Node* popHead(List* pList){
 
 static Node* popTail(List* pList){
     Node* oldTail = pList->tail;
+
+    if (List_count(pList) == 1){
+        pList->head = NULL;
+        pList->tail = NULL;
+        pList->current = LIST_OOB_START;
+        pList->currNode = NULL;
+        return oldTail;
+    }
+
     pList->tail = pList->tail->prev;
     pList->tail->next = NULL;
 
@@ -336,7 +347,6 @@ int List_prepend(List* pList, void* pItem){
     return LIST_SUCCESS;
 }
 
-// START HEREEEEEEE
 
 
 // Return current item and take it out of pList. Make the next item the current one.
