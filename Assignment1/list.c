@@ -11,10 +11,10 @@ static Node* nodeTail;
 static List* listHead;
 static List* listTail;
 
-// static Node* useNode(){
-//     Node* newNode = nodeHead;
-//     nodeHead = nodeHead->next;
-// }
+static Node* useNode(){
+    Node* newNode = nodeHead;
+    nodeHead = nodeHead->next;
+}
 
 static void incrementListSize(List* pList){
     numNodes++;
@@ -46,6 +46,14 @@ static void insertAfterList(List* pList, Node* newNode, void* pItem){
         pList->tail->next = newNode;
         newNode->item = pItem;
         pList->tail = newNode;
+}
+
+static void insertIntoEmptyList(List* pList, Node* newNode, void* pItem){
+    newNode->item = pItem;
+    newNode->next = NULL;
+    newNode->prev = NULL;
+    pList->tail = newNode;
+    pList->head = newNode;
 }
 
 // Makes a new, empty list, and returns its reference on success. 
@@ -191,8 +199,7 @@ int List_insert_after(List* pList, void* pItem){
         return LIST_FAIL;
     }
 
-    Node* newNode = nodeHead;
-    nodeHead = nodeHead->next;
+    Node* newNode = useNode();
 
     if (pList->current == LIST_OOB_START){          // case 1: current pointer is before the list start
         insertBeforeList(pList, newNode, pItem);
@@ -225,8 +232,7 @@ int List_insert_before(List* pList, void* pItem){
         return LIST_FAIL;
     }
 
-    Node* newNode = nodeHead;
-    nodeHead = nodeHead->next;
+    Node* newNode = useNode();
 
     if (pList->current == LIST_OOB_START || pList->current == pList->head){          // case 1: current pointer is before the list start or is at the head
         insertBeforeList(pList, newNode, pItem);
@@ -254,59 +260,43 @@ int List_insert_before(List* pList, void* pItem){
 // Returns 0 on success, -1 on failure.
 int List_append(List* pList, void* pItem){
     assert(pList != NULL);
-    Node* temp = pList->tail;
 
-    // check for empty pList
-    if (List_count(pList) == 0){
-
+    if (numNodes >= LIST_MAX_NUM_NODES){
+        return LIST_FAIL;
     }
-    if (numNodes < LIST_MAX_NUM_NODES){
-        Node* newNode = nodeHead;
-        nodeHead = nodeHead->next;
-
-        temp->next = newNode;
-        newNode->prev = temp;
-        newNode->item = pItem;
-        newNode->next = NULL;
-        pList->tail = newNode;
-
-        pList->currNode = newNode;
-        pList->current = newNode->item;
-
-        incrementListSize(pList);
-        return LIST_SUCCESS;
+    
+    Node* newNode = useNode();
+    if (List_count(pList) == 0){                    // check for empty pList
+        insertIntoEmptyList(pList, newNode, pItem);
     }
+    else{                                           // general case
+        insertAfterList(pList, newNode, pItem); 
+    }
+    incrementListSize(pList);
+    setNewCurrent(pList, newNode);
+    return LIST_SUCCESS;
 
-    return LIST_FAIL;
 }
-
-
-// START HERE!!!!!!!!!!
-
-
 
 // Adds item to the front of pList, and makes the new item the current one. 
 // Returns 0 on success, -1 on failure.
 int List_prepend(List* pList, void* pItem){
     assert(pList != NULL);
-    Node* temp = pList->head;
-
-    if (numNodes < LIST_MAX_NUM_NODES){
-        Node* newNode = nodeHead;
-        nodeHead = nodeHead->next;
-
-        temp->prev = newNode;
-        newNode->prev = NULL;
-        newNode->item = pItem;
-        newNode->next = temp;
-
-        pList->currNode = newNode;
-        pList->current = newNode->item;
-
-        incrementListSize(pList);
-        return LIST_SUCCESS;
+    
+    if (numNodes >= LIST_MAX_NUM_NODES){
+        return LIST_FAIL;
     }
-    return LIST_FAIL;
+
+    Node* newNode = useNode();
+    if (List_count(pList) == 0){
+        insertIntoEmptyList(pList, newNode, pItem);
+    }
+    else{
+        insertBeforeList(pList, newNode, pItem);
+    }
+    incrementListSize(pList);
+    setNewCurrent(pList, newNode);
+    return LIST_SUCCESS;
 }
 
 // Return current item and take it out of pList. Make the next item the current one.
