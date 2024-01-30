@@ -11,11 +11,20 @@ static Node* nodeTail;
 static List* listHead;
 static List* listTail;
 
-static void addNode(List* pList){
+static void incrementListSize(List* pList){
     numNodes++;
     pList->listSize++;
 }
 
+static void decreaseListSize(List* pList){
+    numNodes--;
+    pList->listSize--;
+}
+
+static void setNewCurrent(List* pList, Node* newCurrentNode){
+    pList->current = newCurrentNode->item;
+    pList->currNode = newCurrentNode;
+}
 // Makes a new, empty list, and returns its reference on success. 
 // Returns a NULL pointer on failure.
 List* List_create(){
@@ -200,7 +209,7 @@ int List_insert_after(List* pList, void* pItem){
         temp->next->prev = newNode;
         temp->next = newNode;
     }
-    addNode(pList);
+    incrementListSize(pList);
     pList->current = newNode->item;
     pList->currNode = newNode;        
     return LIST_SUCCESS;
@@ -256,7 +265,7 @@ int List_insert_before(List* pList, void* pItem){
         temp->prev->next = newNode;
         temp->prev = newNode;
     }
-    addNode(pList);
+    incrementListSize(pList);
     pList->current = newNode->item;
     pList->currNode = newNode;        
     return LIST_SUCCESS;
@@ -282,7 +291,7 @@ int List_append(List* pList, void* pItem){
         pList->currNode = newNode;
         pList->current = newNode->item;
 
-        addNode(pList);
+        incrementListSize(pList);
         return LIST_SUCCESS;
     }
 
@@ -312,7 +321,7 @@ int List_prepend(List* pList, void* pItem){
         pList->currNode = newNode;
         pList->current = newNode->item;
 
-        addNode(pList);
+        incrementListSize(pList);
         return LIST_SUCCESS;
     }
     return LIST_FAIL;
