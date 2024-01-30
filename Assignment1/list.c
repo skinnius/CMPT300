@@ -11,6 +11,11 @@ static Node* nodeTail;
 static List* listHead;
 static List* listTail;
 
+static void addNode(List* pList){
+    numNodes++;
+    pList->listSize++;
+}
+
 // Makes a new, empty list, and returns its reference on success. 
 // Returns a NULL pointer on failure.
 List* List_create(){
@@ -98,19 +103,20 @@ void* List_last(List* pList){
 void* List_next(List* pList){
     assert(pList != NULL);
 
-    if (pList->current == LIST_OOB_START){
+    if (pList->current == LIST_OOB_START){          // Case 1: current pointer OOB
         pList->currNode = pList->head;
         pList->current = pList->head->item;
         return pList->current;
     }
 
-    else if (pList->currNode->next != NULL){
+    else if (pList->currNode->next != NULL){       // General Case
         pList->currNode = pList->currNode->next;
         pList->current = pList->currNode->item;
         return pList->current;
     }
 
-    pList->current = LIST_OOB_END;
+    pList->current = LIST_OOB_END;                  // next node going OOB
+    pList->currNode = NULL;
     return NULL;
 }
 
@@ -132,7 +138,8 @@ void* List_prev(List* pList){
         pList->current = pList->currNode->item;
         return pList->current;
     }
-    pList->current = LIST_OOB_START;
+    pList->current = LIST_OOB_START;                // consider setting currNode to NULL; however, might cause further problems
+    pList->currNode = NULL;
     return NULL;
 }
 
@@ -193,7 +200,7 @@ int List_insert_after(List* pList, void* pItem){
         temp->next->prev = newNode;
         temp->next = newNode;
     }
-    numNodes++;
+    addNode(pList);
     pList->current = newNode->item;
     pList->currNode = newNode;        
     return LIST_SUCCESS;
@@ -249,13 +256,13 @@ int List_insert_before(List* pList, void* pItem){
         temp->prev->next = newNode;
         temp->prev = newNode;
     }
-    numNodes++;
+    addNode(pList);
     pList->current = newNode->item;
     pList->currNode = newNode;        
     return LIST_SUCCESS;
 }
 
-
+// WHAT IF PLIST EMPTY????
 // Adds item to the end of pList, and makes the new item the current one. 
 // Returns 0 on success, -1 on failure.
 int List_append(List* pList, void* pItem){
@@ -263,17 +270,19 @@ int List_append(List* pList, void* pItem){
     Node* temp = pList->tail;
 
     if (numNodes < LIST_MAX_NUM_NODES){
-        Node* newItem = nodeHead;
+        Node* newNode = nodeHead;
         nodeHead = nodeHead->next;
 
-        temp->next = newItem;
-        newItem->prev = temp;
-        newItem->item = pItem;
-        newItem->next = NULL;
-        pList->tail = newItem;
+        temp->next = newNode;
+        newNode->prev = temp;
+        newNode->item = pItem;
+        newNode->next = NULL;
+        pList->tail = newNode;
 
+        pList->currNode = newNode;
+        pList->current = newNode->item;
 
-        numNodes++;
+        addNode(pList);
         return LIST_SUCCESS;
     }
 
@@ -292,18 +301,76 @@ int List_prepend(List* pList, void* pItem){
     Node* temp = pList->head;
 
     if (numNodes < LIST_MAX_NUM_NODES){
-        Node* newItem = nodeHead;
+        Node* newNode = nodeHead;
         nodeHead = nodeHead->next;
 
-        temp->prev = 
-        newItem->prev = NULL;
-        newItem->item = pItem;
-        numNodes++;
+        temp->prev = newNode;
+        newNode->prev = NULL;
+        newNode->item = pItem;
+        newNode->next = temp;
+
+        pList->currNode = newNode;
+        pList->current = newNode->item;
+
+        addNode(pList);
         return LIST_SUCCESS;
     }
-
     return LIST_FAIL;
 }
+
+// Return current item and take it out of pList. Make the next item the current one.
+// If the current pointer is before the start of the pList, or beyond the end of the pList,
+// then do not change the pList and return NULL.
+void* List_remove(List* pList){
+    assert(pList != NULL);
+    void* currVal = pList->current;
+
+    if (pList->current == LIST_OOB_START || pList->current == LIST_OOB_END){            // first check for OOB
+        return NULL;
+    }
+    
+    if (pList->currNode == pList->head){                // case 1: removing head node
+        Node* temp = pList->head;
+        currVal = temp->item;
+
+        // setting head to next node
+        pList->head = temp->next;
+        pList->head->prev = NULL;
+        pList->currNode = pList->head;
+        pList->current = pList->head->item;
+        
+    }
+
+    else if (pList->currNode == pList->tail){         // case 2: removing tail node
+        Node* temp = pList->tail;
+        currVal = temp->item;
+
+        // setting tail to the previous node
+        pList->tail = temp->prev;
+        pList->tail->next = NULL;
+        pList->currNode = NULL;
+        pList->current = LIST_OOB_END;
+
+    }
+
+    else{                    // general case
+
+    }
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
 
 
 
