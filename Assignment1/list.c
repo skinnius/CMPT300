@@ -32,20 +32,20 @@ static void setNewCurrent(List* pList, Node* newCurrentNode){
 }
 
 static void insertBeforeList(List* pList, Node* newNode, void* pItem){
-        newNode->next = pList->head;
-        pList->head->prev = newNode;
-        newNode->prev = NULL;
-        newNode->item = pItem;
-        pList->head = newNode;
+    newNode->next = pList->head;
+    pList->head->prev = newNode;
+    newNode->prev = NULL;
+    newNode->item = pItem;
+    pList->head = newNode;
 
 }
 
 static void insertAfterList(List* pList, Node* newNode, void* pItem){
-        newNode->next = NULL;
-        newNode->prev = pList->tail;
-        pList->tail->next = newNode;
-        newNode->item = pItem;
-        pList->tail = newNode;
+    newNode->next = NULL;
+    newNode->prev = pList->tail;
+    pList->tail->next = newNode;
+    newNode->item = pItem;
+    pList->tail = newNode;
 }
 
 static void insertIntoEmptyList(List* pList, Node* newNode, void* pItem){
@@ -56,6 +56,21 @@ static void insertIntoEmptyList(List* pList, Node* newNode, void* pItem){
     pList->head = newNode;
 }
 
+static Node* popHead(List* pList){
+    Node* oldHead = pList->head;
+    pList->head = pList->head->next;
+    pList->head->prev = NULL;
+
+    return oldHead;
+}
+
+static Node* popTail(List* pList){
+    Node* oldTail = pList->tail;
+    pList->tail = pList->tail->prev;
+    pList->tail->next = NULL;
+
+    return oldTail;
+}
 // Makes a new, empty list, and returns its reference on success. 
 // Returns a NULL pointer on failure.
 List* List_create(){
@@ -311,32 +326,31 @@ void* List_remove(List* pList){
     }
     
     if (pList->currNode == pList->head){                // case 1: removing head node
-        Node* temp = pList->head;
-        currVal = temp->item;
-
-        // setting head to next node
-        pList->head = temp->next;
-        pList->head->prev = NULL;
-        pList->currNode = pList->head;
-        pList->current = pList->head->item;
+        Node* oldHead = popHead(pList);
+        setNewCurrent(pList, pList->head);
+        currVal = oldHead->item;
         
     }
 
     else if (pList->currNode == pList->tail){         // case 2: removing tail node
-        Node* temp = pList->tail;
-        currVal = temp->item;
-
-        // setting tail to the previous node
-        pList->tail = temp->prev;
-        pList->tail->next = NULL;
-        pList->currNode = NULL;
+        Node* oldTail = popTail(pList);
+        pList->currNode = NULL;                         
         pList->current = LIST_OOB_END;
-
+        currVal = oldTail->item;
     }
 
     else{                    // general case
+        Node* oldCurr = pList->currNode;
+        Node* prevNode = pList->currNode->prev;
+        Node* nextNode = pList->currNode->next;
+        prevNode->next = nextNode;
+        nextNode->prev = prevNode;
 
+        setNewCurrent(pList, nextNode);
+        currVal = oldCurr->item;
     }
+
+    
 
 
 
