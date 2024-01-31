@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include "list.h"
 
 static List availableLists[LIST_MAX_NUM_HEADS];    // global statically allocated list of possible unique Lists --> Array of List pointers
@@ -27,7 +28,6 @@ static void decreaseListSize(List* pList){
 }
 
 static void setNewCurrent(List* pList, Node* newCurrentNode){
-    pList->current = newCurrentNode->item;
     pList->currNode = newCurrentNode;
 }
 
@@ -79,7 +79,7 @@ static void freeList(List* pList){
     pList->next = NULL;
     listTail = pList;
 
-    pList->current = LIST_OOB_START;            // try extracting this into a new function
+    pList->currStatus = LIST_OOB_START;            // try extracting this into a new function
     pList->currNode = NULL;
     pList->head = NULL;
     pList->tail = NULL;
@@ -99,7 +99,7 @@ List* List_create(){
             availableLists[i].head = NULL;               // initialize everything to NULL  
             availableLists[i].tail = NULL;
             availableLists[i].currNode = NULL;
-            availableLists[i].current = LIST_OOB_START;
+            availableLists[i].currStatus = LIST_OOB_START;
             availableLists[i].listSize = 0;
             availableLists[i].next = NULL;
 
@@ -148,10 +148,10 @@ void* List_first(List* pList){
     assert(pList != NULL);
     if (pList->listSize != 0){
         setNewCurrent(pList, pList->head);
-        return pList->current;
+        return pList->currNode->item;
     }
     pList->currNode = NULL; 
-    pList->current = LIST_OOB_START;                                                                                 // DOUBLE CHECK IF THIS IS CORRECT
+    pList->currStatus = LIST_OOB_START;                                                                                 // DOUBLE CHECK IF THIS IS CORRECT
     return NULL;
 }
 
@@ -161,10 +161,10 @@ void* List_last(List* pList){
     assert(pList != NULL);
     if (pList->listSize != 0){
         setNewCurrent(pList, pList->tail);
-        return pList->current;
+        return pList->currNode->item;
     }
     pList->currNode = NULL;
-    pList->current = LIST_OOB_START;
+    pList->currStatus = LIST_OOB_START;
     return NULL;
 }
 
@@ -174,22 +174,23 @@ void* List_last(List* pList){
 void* List_next(List* pList){
     assert(pList != NULL);
 
-    if (pList->current == LIST_OOB_START){          // Case 1: current pointer OOB
+    if (pList->currStatus == LIST_OOB_START){          // Case 1: current pointer OOB
         if (List_count(pList) == 0){                // Case 1.1: current pointer OOB for empty list
-            pList->current = LIST_OOB_END;
+            pList->currStatus = LIST_OOB_END;
             return NULL;
         }
 
         setNewCurrent(pList, pList->head);
-        return pList->current;
+        return pList->currNode->item;
     }
 
     else if (pList->currNode != NULL && pList->currNode->next != NULL){       // General Case
         setNewCurrent(pList, pList->currNode->next);
-        return pList->current;
+        return pList->currStatus;
     }
 
-    pList->current = LIST_OOB_END;                  // next node going OOB
+    
+    pList->currStatus = LIST_OOB_END;                  // next node going OOB
     pList->currNode = NULL;
     return NULL;
 }
@@ -200,21 +201,21 @@ void* List_next(List* pList){
 void* List_prev(List* pList){
     assert(pList != NULL);
 
-    if (pList->current == LIST_OOB_END){
+    if (pList->currStatus == LIST_OOB_END){
         if (List_count(pList) == 0){
-            pList->current = LIST_OOB_START;
+            pList->currStatus = LIST_OOB_START;
             return NULL;
         }
         setNewCurrent(pList, pList->tail);
-        return pList->current;
+        return pList->currNode->item;
     }
 
     else if (pList->currNode != NULL && pList->currNode->prev != NULL){
         setNewCurrent(pList, pList->currNode->prev);
-        return pList->current;
+        return pList->currNode->item;
     }
 
-    pList->current = LIST_OOB_START;               
+    pList->currStatus = LIST_OOB_START;               
     pList->currNode = NULL;
     return NULL;
 }
@@ -223,7 +224,7 @@ void* List_prev(List* pList){
 // Returns a pointer to the current item in pList.
 void* List_curr(List* pList){           
     assert(pList != NULL);  
-    return pList->current;
+    return pList->currNode->item;
 }
 
 // Adds the new item to pList directly after the current item, and makes item the current item. 
@@ -239,11 +240,11 @@ int List_insert_after(List* pList, void* pItem){
 
     Node* newNode = useNode();
 
-    if (pList->current == LIST_OOB_START){          // case 1: current pointer is before the list start
+    if (pList->currStatus == LIST_OOB_START){          // case 1: current pointer is before the list start
         insertBeforeList(pList, newNode, pItem);
     }
 
-    else if (pList->current == LIST_OOB_END || pList->currNode == pList->tail){            // case 2: current pointer is after the list end or current pointer is on tail
+    else if (pList->currStatus == LIST_OOB_END || pList->currNode == pList->tail){            // case 2: current pointer is after the list end or current pointer is on tail
         insertAfterList(pList, newNode, pItem);
     }   
 
@@ -272,11 +273,11 @@ int List_insert_before(List* pList, void* pItem){
 
     Node* newNode = useNode();
 
-    if (pList->current == LIST_OOB_START || pList->current == pList->head){          // case 1: current pointer is before the list start or is at the head
+    if (pList->currNode == LIST_OOB_START || pList->currNode == pList->head){          // case 1: current pointer is before the list start or is at the head
         insertBeforeList(pList, newNode, pItem);
     }
 
-    else if (pList->current == LIST_OOB_END){            // case 2: current pointer is after the list end
+    else if (pList->currStatus == LIST_OOB_END){            // case 2: current pointer is after the list end
         insertAfterList(pList, newNode, pItem);
     }   
 
@@ -345,14 +346,15 @@ void* List_remove(List* pList){
     void* currItem = pList->current;
     Node* nodeToBeFreed = pList->currNode;
 
-    if (pList->current == LIST_OOB_START || pList->current == LIST_OOB_END){            // first check for OOB (covers empty list check)
+    if (pList->currNode == NULL && (*(int*)pList->current == LIST_OOB_START 
+                                || *(int*)pList->current == LIST_OOB_END)){            // first check for OOB (covers empty list check)
         return NULL;
     }
     
     if (List_count(pList) == 1){                // if only one element in list
         pList->head = NULL;
         pList->tail = NULL;
-        pList->current = LIST_OOB_END;
+        *(int*)pList->current = LIST_OOB_END;
         pList->currNode = NULL;
     }
 
@@ -364,7 +366,7 @@ void* List_remove(List* pList){
     else if (pList->currNode == pList->tail){         // case 2: removing tail node
         popTail(pList);
         pList->currNode = NULL;                         
-        pList->current = LIST_OOB_END;
+        *(int*)pList->current = LIST_OOB_END;
     }
 
     else{                                            // general case
@@ -443,12 +445,57 @@ void List_concat(List* pList1, List* pList2){           // this feels a little s
 // pList and all its nodes no longer exists after the operation; its head and nodes are 
 // available for future operations.
 // typedef void (*FREE_FN)(void* pItem);
+
 void List_free(List* pList, FREE_FN pItemFreeFn){
     assert(pList != NULL);
 
-    
-    (*pItemFreeFn)(/*shii idk*/);
+    while (pList->currNode != NULL){
+        (*pItemFreeFn)(pList->currNode->item);
+        pList->currNode = pList->currNode->next;
+    }
+
+    pList->head = NULL;
+    pList->tail = NULL;
+    pList->listSize = 0;
+    pList->currNode = NULL;
+    pList->current = LIST_OOB_START;
 }
+
+
+
+
+// Search pList, starting at the current item, until the end is reached or a match is found. 
+// In this context, a match is determined by the comparator parameter. This parameter is a
+// pointer to a routine that takes as its first argument an item pointer, and as its second 
+// argument pComparisonArg. Comparator returns 0 if the item and comparisonArg don't match, 
+// or 1 if they do. Exactly what constitutes a match is up to the implementor of comparator. 
+// 
+// If a match is found, the current pointer is left at the matched item and the pointer to 
+// that item is returned. If no match is found, the current pointer is left beyond the end of 
+// the list and a NULL pointer is returned.
+// 
+// If the current pointer is before the start of the pList, then start searching from
+// the first node in the list (if any).
+
+void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg){
+
+    if (pList->current == LIST_OOB_START){                          // if current pointer before the start of the list
+        pList->currNode = pList->head;
+    }
+
+    while (pList->currNode != NULL){
+        pList->current = pList->currNode->item;
+        int match = (*pComparator)(pList->current, pComparisonArg);
+        
+        if (match){
+            return pList->current;
+        }
+    }
+    *(int*)pList->current = LIST_OOB_END;
+    return NULL;
+
+}
+
 
 
 

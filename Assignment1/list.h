@@ -29,7 +29,7 @@ struct List_s{
     Node* head;
     Node* tail;
     Node* currNode;
-    void* current;
+    enum ListOutOfBounds currStatus;
     List* next;       
 };
 
