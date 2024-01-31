@@ -56,39 +56,14 @@ static void insertIntoEmptyList(List* pList, Node* newNode, void* pItem){
     pList->head = newNode;
 }
 
-
-static Node* popHead(List* pList){
-    Node* oldHead = pList->head;
-
-    if (List_count(pList) == 1){
-        pList->head = NULL;
-        pList->tail = NULL;
-        pList->current = LIST_OOB_START;
-        pList->currNode = NULL;
-        return oldHead;
-    }
-
+static void popHead(List* pList){
     pList->head = pList->head->next;
     pList->head->prev = NULL;
-
-    return oldHead;
 }
 
-static Node* popTail(List* pList){
-    Node* oldTail = pList->tail;
-
-    if (List_count(pList) == 1){
-        pList->head = NULL;
-        pList->tail = NULL;
-        pList->current = LIST_OOB_START;
-        pList->currNode = NULL;
-        return oldTail;
-    }
-
+static void popTail(List* pList){
     pList->tail = pList->tail->prev;
     pList->tail->next = NULL;
-
-    return oldTail;
 }
 
 static void freeNewNode(Node* node){                   // questionable function lmao DELETE THIS COMMENT BEFORE SUBMITTING 
@@ -99,7 +74,19 @@ static void freeNewNode(Node* node){                   // questionable function 
     node->item = NULL;
 }
 
+static void freeNewList(List* pList){
+    listTail->next = pList;
+    pList->next = NULL;
+    listTail = pList;
+    pList->current = LIST_OOB_START;            // try extracting this into a new function
+    pList->currNode = NULL;
+    pList->head = NULL;
+    pList->tail = NULL;
+    pList->listSize = 0;
 
+    numList--;
+    
+}
 // Makes a new, empty list, and returns its reference on success. 
 // Returns a NULL pointer on failure.
 List* List_create(){
@@ -162,7 +149,8 @@ void* List_first(List* pList){
         setNewCurrent(pList, pList->head);
         return pList->current;
     }
-    pList->current = NULL;                                                                                  // DOUBLE CHECK IF THIS IS CORRECT
+    pList->currNode = NULL; 
+    pList->current = LIST_OOB_START;                                                                                 // DOUBLE CHECK IF THIS IS CORRECT
     return NULL;
 }
 
@@ -174,7 +162,8 @@ void* List_last(List* pList){
         setNewCurrent(pList, pList->tail);
         return pList->current;
     }
-    pList->current = NULL;
+    pList->currNode = NULL;
+    pList->current = LIST_OOB_START;
     return NULL;
 }
 
@@ -187,7 +176,7 @@ void* List_next(List* pList){
     if (pList->current == LIST_OOB_START){          // Case 1: current pointer OOB
         if (List_count(pList) == 0){                // Case 1.1: current pointer OOB for empty list
             pList->current = LIST_OOB_END;
-            return pList->current;
+            return NULL;
         }
 
         setNewCurrent(pList, pList->head);
@@ -213,7 +202,7 @@ void* List_prev(List* pList){
     if (pList->current == LIST_OOB_END){
         if (List_count(pList) == 0){
             pList->current = LIST_OOB_START;
-            return pList->current;
+            return NULL;
         }
         setNewCurrent(pList, pList->tail);
         return pList->current;
@@ -323,7 +312,6 @@ int List_append(List* pList, void* pItem){
     incrementListSize(pList);
     setNewCurrent(pList, newNode);
     return LIST_SUCCESS;
-
 }
 
 // Adds item to the front of pList, and makes the new item the current one. 
@@ -348,42 +336,43 @@ int List_prepend(List* pList, void* pItem){
 }
 
 
-
 // Return current item and take it out of pList. Make the next item the current one.
 // If the current pointer is before the start of the pList, or beyond the end of the pList,
 // then do not change the pList and return NULL.
 void* List_remove(List* pList){
     assert(pList != NULL);
     void* currItem = pList->current;
-    Node* nodeToBeFreed = NULL;
+    Node* nodeToBeFreed = pList->currNode;
 
     if (pList->current == LIST_OOB_START || pList->current == LIST_OOB_END){            // first check for OOB (covers empty list check)
         return NULL;
     }
     
-    if (pList->currNode == pList->head){                // case 1: removing head node
-        nodeToBeFreed = popHead(pList);
+    if (List_count(pList) == 1){                // if only one element in list
+        pList->head = NULL;
+        pList->tail = NULL;
+        pList->current = LIST_OOB_END;
+        pList->currNode = NULL;
+    }
+
+    else if (pList->currNode == pList->head){                // case 1: removing head node
+        popHead(pList);
         setNewCurrent(pList, pList->head);
-        currItem = nodeToBeFreed->item;
-        
     }
 
     else if (pList->currNode == pList->tail){         // case 2: removing tail node
-        nodeToBeFreed = popTail(pList);
+        popTail(pList);
         pList->currNode = NULL;                         
         pList->current = LIST_OOB_END;
-        currItem = nodeToBeFreed->item;
     }
 
     else{                                            // general case
-        nodeToBeFreed = pList->currNode;
         Node* prevNode = pList->currNode->prev;
         Node* nextNode = pList->currNode->next;
         prevNode->next = nextNode;
         nextNode->prev = prevNode;
 
         setNewCurrent(pList, nextNode);
-        currItem = nodeToBeFreed->item;
     }
 
     // making the nodes "free"
@@ -395,25 +384,45 @@ void* List_remove(List* pList){
 
 // Return last item and take it out of pList. Make the new last item the current one.
 // Return NULL if pList is initially empty.
-void* List_trim(List* pList)
-{
+void* List_trim(List* pList){
+    assert(pList != NULL);
     if (List_count(pList) == 0){
         return NULL;
     }
-    Node* nodeToBeFreed = popTail(pList);
+
+    Node* nodeToBeFreed = pList->tail;
     void* currItem = nodeToBeFreed->item;
+    popTail(pList);
 
     setNewCurrent(pList, pList->tail);
     freeNewNode(nodeToBeFreed);
     decreaseListSize(pList);
     
     return currItem;
-
 }
 
 
+// Adds pList2 to the end of pList1. The current pointer is set to the current pointer of pList1. 
+// pList2 no longer exists after the operation; its head is available
+// for future operations.
+void List_concat(List* pList1, List* pList2){
+    assert(pList1 != NULL);
+    assert(pList2 != NULL);
+    assert(pList1 != pList2);
+
+    // case 1: empty pList1
+    if (List_count(pList1) == 0){
+        pList1->head = pList2->head;
+        pList1->tail = pList1->tail;
+        pList1->listSize = pList2->listSize;
+
+        // throw pList2 back into the open list pool
+        freeNewList(pList2);
+    }
 
 
+
+}
 
 
 
