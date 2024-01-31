@@ -15,6 +15,7 @@ static List* listTail;
 static Node* useNode(){
     Node* newNode = nodeHead;
     nodeHead = nodeHead->next;
+    return newNode;
 }
 
 static void incrementListSize(List* pList){
@@ -175,7 +176,7 @@ void* List_next(List* pList){
     assert(pList != NULL);
 
     if (pList->currStatus == LIST_OOB_START){          // Case 1: current pointer OOB
-        if (List_count(pList) == 0){                // Case 1.1: current pointer OOB for empty list
+        if (List_count(pList) == 0){                   // Case 1.1: current pointer OOB for empty list
             pList->currStatus = LIST_OOB_END;
             return NULL;
         }
@@ -189,7 +190,6 @@ void* List_next(List* pList){
         return pList->currNode->item;
     }
 
-    
     pList->currStatus = LIST_OOB_END;                  // next node going OOB
     pList->currNode = NULL;
     return NULL;
@@ -240,7 +240,11 @@ int List_insert_after(List* pList, void* pItem){
 
     Node* newNode = useNode();
 
-    if (pList->currStatus == LIST_OOB_START){          // case 1: current pointer is before the list start
+    if (List_count(pList) == 0){
+        insertIntoEmptyList(pList, newNode, pItem);
+    }
+
+    else if (pList->currNode == NULL && pList->currStatus == LIST_OOB_START){          // case 1: current pointer is before the list start
         insertBeforeList(pList, newNode, pItem);
     }
 
@@ -254,6 +258,7 @@ int List_insert_after(List* pList, void* pItem){
         newNode->prev = temp;
         temp->next->prev = newNode;
         temp->next = newNode;
+        newNode->item = pItem;
     }
     incrementListSize(pList);
     setNewCurrent(pList, newNode);
@@ -273,12 +278,16 @@ int List_insert_before(List* pList, void* pItem){
 
     Node* newNode = useNode();
 
-    if (pList->currNode == LIST_OOB_START || pList->currNode == pList->head){          // case 1: current pointer is before the list start or is at the head
-        insertBeforeList(pList, newNode, pItem);
+    if (List_count(pList) == 0){
+        insertIntoEmptyList(pList, newNode, pItem);
     }
 
-    else if (pList->currStatus == LIST_OOB_END){            // case 2: current pointer is after the list end
+    else if (pList->currNode == NULL && pList->currStatus == LIST_OOB_END){          // case 1: current pointer is after the list start
         insertAfterList(pList, newNode, pItem);
+    }
+
+    else if (pList->currStatus == LIST_OOB_START || pList->currNode == pList->head){            // case 2: current pointer is after the list end
+        insertBeforeList(pList, newNode, pItem);
     }   
 
     // general case
@@ -288,13 +297,13 @@ int List_insert_before(List* pList, void* pItem){
         newNode->prev = temp->prev;
         temp->prev->next = newNode;
         temp->prev = newNode;
+        newNode->item = pItem;
     }
     incrementListSize(pList);
     setNewCurrent(pList, newNode);    
     return LIST_SUCCESS;
 }
 
-// WHAT IF PLIST EMPTY????
 // Adds item to the end of pList, and makes the new item the current one. 
 // Returns 0 on success, -1 on failure.
 int List_append(List* pList, void* pItem){
