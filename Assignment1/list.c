@@ -66,7 +66,7 @@ static void popTail(List* pList){
     pList->tail->next = NULL;
 }
 
-static void freeNewNode(Node* node){                   // questionable function lmao DELETE THIS COMMENT BEFORE SUBMITTING 
+static void freeNode(Node* node){                   // questionable function lmao DELETE THIS COMMENT BEFORE SUBMITTING 
     nodeTail->next = node;
     node->prev = nodeTail;
     node->next = NULL;
@@ -74,10 +74,11 @@ static void freeNewNode(Node* node){                   // questionable function 
     node->item = NULL;
 }
 
-static void freeNewList(List* pList){
+static void freeList(List* pList){
     listTail->next = pList;
     pList->next = NULL;
     listTail = pList;
+
     pList->current = LIST_OOB_START;            // try extracting this into a new function
     pList->currNode = NULL;
     pList->head = NULL;
@@ -376,7 +377,7 @@ void* List_remove(List* pList){
     }
 
     // making the nodes "free"
-    freeNewNode(nodeToBeFreed);
+    freeNode(nodeToBeFreed);
     decreaseListSize(pList);
     return currItem;
 }
@@ -395,7 +396,7 @@ void* List_trim(List* pList){
     popTail(pList);
 
     setNewCurrent(pList, pList->tail);
-    freeNewNode(nodeToBeFreed);
+    freeNode(nodeToBeFreed);
     decreaseListSize(pList);
     
     return currItem;
@@ -405,7 +406,7 @@ void* List_trim(List* pList){
 // Adds pList2 to the end of pList1. The current pointer is set to the current pointer of pList1. 
 // pList2 no longer exists after the operation; its head is available
 // for future operations.
-void List_concat(List* pList1, List* pList2){
+void List_concat(List* pList1, List* pList2){           // this feels a little sketchy, might be source of problem in future tests
     assert(pList1 != NULL);
     assert(pList2 != NULL);
     assert(pList1 != pList2);
@@ -413,17 +414,41 @@ void List_concat(List* pList1, List* pList2){
     // case 1: empty pList1
     if (List_count(pList1) == 0){
         pList1->head = pList2->head;
-        pList1->tail = pList1->tail;
+        pList1->tail = pList2->tail;
         pList1->listSize = pList2->listSize;
 
         // throw pList2 back into the open list pool
-        freeNewList(pList2);
+        freeList(pList2);
     }
 
+    // case 2: empty pList2
+    else if (List_count(pList2) == 0){
+        // throw pList2 back into the open list pool
+        freeList(pList2);
+    }
+    // general case
+    else{
+        pList1->tail->next = pList2->head;
+        pList2->head->prev = pList1->tail;
+        pList1->tail = pList2->tail;
+        pList1->listSize += pList2->listSize;
 
-
+        freeList(pList2);
+    }
 }
 
+
+// Delete pList. pItemFreeFn is a pointer to a routine that frees an item. 
+// It should be invoked (within List_free) as: (*pItemFreeFn)(itemToBeFreedFromNode);
+// pList and all its nodes no longer exists after the operation; its head and nodes are 
+// available for future operations.
+// typedef void (*FREE_FN)(void* pItem);
+void List_free(List* pList, FREE_FN pItemFreeFn){
+    assert(pList != NULL);
+
+    
+    (*pItemFreeFn)(/*shii idk*/);
+}
 
 
 
