@@ -106,9 +106,10 @@ List* List_create(){
             if (i != LIST_MAX_NUM_HEADS - 1){
                 availableLists[i].next = &availableLists[i + 1];
             }
-            listHead = &availableLists[0];
-            listTail = &availableLists[LIST_MAX_NUM_HEADS - 1];
         }
+
+        listHead = &availableLists[0];
+        listTail = &availableLists[LIST_MAX_NUM_HEADS - 1];
 
         for (int i = 0; i < LIST_MAX_NUM_NODES - 1; i++){
             availableNodes[i].item = NULL;
@@ -124,13 +125,12 @@ List* List_create(){
             nodeHead = &availableNodes[0];
             nodeTail = &availableNodes[LIST_MAX_NUM_NODES - 1];
         }
-
         initialSetup = false;
     }
 
     if (numList < LIST_MAX_NUM_HEADS){
-        listHead = listHead->next;          // give the new list the memory position of the next available "list position"
         newList = listHead;
+        listHead = listHead->next;          // give the new list the memory position of the next available "list position"
         numList++;
     }
     
@@ -186,7 +186,7 @@ void* List_next(List* pList){
 
     else if (pList->currNode != NULL && pList->currNode->next != NULL){       // General Case
         setNewCurrent(pList, pList->currNode->next);
-        return pList->currStatus;
+        return pList->currNode->item;
     }
 
     
@@ -343,18 +343,17 @@ int List_prepend(List* pList, void* pItem){
 // then do not change the pList and return NULL.
 void* List_remove(List* pList){
     assert(pList != NULL);
-    void* currItem = pList->current;
+    void* currItem = pList->currNode->item;
     Node* nodeToBeFreed = pList->currNode;
 
-    if (pList->currNode == NULL && (*(int*)pList->current == LIST_OOB_START 
-                                || *(int*)pList->current == LIST_OOB_END)){            // first check for OOB (covers empty list check)
+    if (pList->currStatus == LIST_OOB_START || pList->currStatus == LIST_OOB_END){            // first check for OOB (covers empty list check)
         return NULL;
     }
     
     if (List_count(pList) == 1){                // if only one element in list
         pList->head = NULL;
         pList->tail = NULL;
-        *(int*)pList->current = LIST_OOB_END;
+        pList->currStatus = LIST_OOB_END;
         pList->currNode = NULL;
     }
 
@@ -366,7 +365,7 @@ void* List_remove(List* pList){
     else if (pList->currNode == pList->tail){         // case 2: removing tail node
         popTail(pList);
         pList->currNode = NULL;                         
-        *(int*)pList->current = LIST_OOB_END;
+        pList->currStatus = LIST_OOB_END;
     }
 
     else{                                            // general case
@@ -458,7 +457,7 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
     pList->tail = NULL;
     pList->listSize = 0;
     pList->currNode = NULL;
-    pList->current = LIST_OOB_START;
+    pList->currStatus = LIST_OOB_START;
 }
 
 
@@ -479,19 +478,18 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
 
 void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg){
 
-    if (pList->current == LIST_OOB_START){                          // if current pointer before the start of the list
+    if (pList->currStatus == LIST_OOB_START){                          // if current pointer before the start of the list
         pList->currNode = pList->head;
     }
 
     while (pList->currNode != NULL){
-        pList->current = pList->currNode->item;
-        int match = (*pComparator)(pList->current, pComparisonArg);
+        int match = (*pComparator)(pList->currNode->item, pComparisonArg);
         
         if (match){
-            return pList->current;
+            return pList->currNode->item;
         }
     }
-    *(int*)pList->current = LIST_OOB_END;
+    *(int*)pList->currStatus = LIST_OOB_END;
     return NULL;
 
 }
