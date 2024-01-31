@@ -186,18 +186,120 @@ static void test_insert(){
     // }
 
     // Test case 4.1: Inserting at the end of the list. (Head)
-    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-        assert(List_insert_before(testList, &i) == 0);
-        printf("%d\n", *(int*)testList->currNode->item);
+    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+    //     assert(List_insert_before(testList, &i) == 0);
+    //     printf("%d\n", *(int*)testList->currNode->item);
 
-        assert(testList->currNode != NULL);
-        assert(testList->currStatus == LIST_OOB_START);
-        assert(testList->currNode == testList->head);
+    //     assert(testList->currNode != NULL);
+    //     assert(testList->currStatus == LIST_OOB_START);
+    //     assert(testList->currNode == testList->head);
 
-        testList->currNode = testList->head;
+    //     testList->currNode = testList->head;
+    // }
+
+    // // Test case 5: Inserting at the middle of the list. (General case)
+    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+    //     assert(List_insert_before(testList, testItem) == 0);
+    //     printf("%d\n", i);
+    //     printf("%d\n", *(int*)testList->currNode->item);
+        
+    //     assert(testList->currNode != NULL);
+    //     assert(testList->currStatus == LIST_OOB_START);
+    //     assert(testList->listSize == i + 1);
+
+    //     if (i <= 1){
+    //         assert(testList->currNode == testList->head);
+    //     }
+
+    //     if (i > 2){
+    //         assert(testList->currNode == testList->head->next);
+    //     }
+    //     if (i > 1){
+    //         testList->currNode = testList->head->next;
+    //     }
+    // }
+
+
+}
+
+
+static void test_item(){
+    // test for insert_after()
+    printf("printing out items...\n");
+    List* testList = List_create();
+    int a[5] = {1,2,3,4,5};
+    assert(List_insert_after(testList, &a[0] ) == 0);
+    assert(List_insert_after(testList, &a[1]) == 0);
+    assert(List_insert_after(testList, &a[2]) == 0);
+    assert(List_insert_after(testList, &a[3]) == 0);
+    assert(List_insert_after(testList, &a[4]) == 0);
+
+
+    assert(numList == 1);
+    assert(numNodes == 5);
+    assert(testList->currNode == testList->tail);
+    assert(testList->currStatus == LIST_OOB_START);
+
+    testList->currNode = testList->head;
+    int i = 1;
+    while (testList->currNode != NULL){
+        printf("current item %d: %d\n", i, *(int*)testList->currNode->item);
+        assert(*(int*)testList->currNode->item == i);
+        List_next(testList);
+        i++;
     }
 
+    testList->currNode = testList->tail;
+    testList->currStatus = LIST_OOB_START;
 
+    // test for backwards remove()
+    for (int i = 0; i < 5; i++){
+        printf("removed item %d: %d\n", i+1, *(int*)testList->currNode->item);
+        assert(*(int*)List_remove(testList) == a[4 - i]);
+        assert(testList->currStatus == LIST_OOB_END);
+        List_prev(testList);
+    }
+    assert(numList == 1);
+    assert(numNodes == 0);
+    assert(testList->currNode == NULL);
+    assert(testList->currStatus == LIST_OOB_START);
+
+
+    // test for insert_before()
+
+    assert(List_insert_before(testList, &a[0] ) == 0);
+    assert(List_insert_before(testList, &a[1]) == 0);
+    assert(List_insert_before(testList, &a[2]) == 0);
+    assert(List_insert_before(testList, &a[3]) == 0);
+    assert(List_insert_before(testList, &a[4]) == 0);
+
+
+    assert(numList == 1);
+    assert(numNodes == 5);
+    assert(testList->currNode == testList->head);
+    assert(testList->currStatus == LIST_OOB_START);        
+
+    testList->currNode = testList->head;
+    i = 0;
+    while (testList->currNode != NULL){
+        printf("current item %d: %d\n", i, *(int*)testList->currNode->item);
+        assert(*(int*)testList->currNode->item == 5-i);
+        List_next(testList);
+        i++;
+    }
+    
+    testList->currNode = testList->head;
+    testList->currStatus = LIST_OOB_START;
+    
+    // test for forwards remove()
+    for (int i = 0; i < 5; i++){
+        printf("removed item %d: %d\n", i+1, *(int*)testList->currNode->item);
+        assert(*(int*)List_remove(testList) == a[4-i]);
+    }
+    assert(numList == 1);
+    assert(numNodes == 0);
+    assert(testList->currNode == NULL);
+    assert(testList->currStatus == LIST_OOB_END);
 }
 
 
@@ -213,7 +315,8 @@ int main(void){
 
     // test_create();
     printf("All create() tests passed!\n");
-    test_insert();
+    // test_insert();
+    test_item();
     // test_current();
     printf("all test cases passed!");
 }

@@ -175,7 +175,7 @@ void* List_last(List* pList){
 void* List_next(List* pList){
     assert(pList != NULL);
 
-    if (pList->currStatus == LIST_OOB_START){          // Case 1: current pointer OOB
+    if (pList->currStatus == LIST_OOB_START && pList->currNode == NULL){          // Case 1: current pointer OOB
         if (List_count(pList) == 0){                   // Case 1.1: current pointer OOB for empty list
             pList->currStatus = LIST_OOB_END;
             return NULL;
@@ -248,7 +248,7 @@ int List_insert_after(List* pList, void* pItem){
         insertBeforeList(pList, newNode, pItem);
     }
 
-    else if (pList->currStatus == LIST_OOB_END || pList->currNode == pList->tail){            // case 2: current pointer is after the list end or current pointer is on tail
+    else if ((pList->currNode == NULL && pList->currStatus == LIST_OOB_END) || pList->currNode == pList->tail){            // case 2: current pointer is after the list end or current pointer is on tail
         insertAfterList(pList, newNode, pItem);
     }   
 
@@ -286,7 +286,7 @@ int List_insert_before(List* pList, void* pItem){
         insertAfterList(pList, newNode, pItem);
     }
 
-    else if (pList->currStatus == LIST_OOB_START || pList->currNode == pList->head){            // case 2: current pointer is after the list end
+    else if ((pList->currNode == NULL && pList->currStatus == LIST_OOB_START) || pList->currNode == pList->head){            // case 2: current pointer is after the list end
         insertBeforeList(pList, newNode, pItem);
     }   
 
@@ -352,13 +352,14 @@ int List_prepend(List* pList, void* pItem){
 // then do not change the pList and return NULL.
 void* List_remove(List* pList){
     assert(pList != NULL);
-    void* currItem = pList->currNode->item;
     Node* nodeToBeFreed = pList->currNode;
-
-    if (pList->currStatus == LIST_OOB_START || pList->currStatus == LIST_OOB_END){            // first check for OOB (covers empty list check)
+    
+    if (nodeToBeFreed == NULL){            // first check for OOB (covers empty list check)
         return NULL;
     }
     
+    void* currItem = pList->currNode->item;
+
     if (List_count(pList) == 1){                // if only one element in list
         pList->head = NULL;
         pList->tail = NULL;
