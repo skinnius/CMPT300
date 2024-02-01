@@ -228,10 +228,9 @@ void test_insert(){
 }
 
 
-void test_item(){
+void test_item(List* testList){
     // test for insert_after()
     printf("test_item() running...\n");
-    List* testList = List_create();
     int a[5] = {1,2,3,4,5};
     assert(List_insert_after(testList, &a[0] ) == 0);
     assert(List_insert_after(testList, &a[1]) == 0);
@@ -339,26 +338,108 @@ void test_item(){
     assert(numList == 1);
     assert(numNodes == 5);
 
+    List_prev(testList);
+    assert(testList->currNode == NULL);
+    assert(testList->currStatus == LIST_OOB_START);
+
     printf("List_append() tests complete \n\n");
 
+    testList->currNode = testList->head;
+    i = 1;
+    while(testList->currNode != NULL){
+        assert(*(int*)List_remove(testList) == i);
+        i++;
+    }
+
+    assert(numList == 1);
+    assert(numNodes == 0);
+
+    // List_prepend() test cases
+    testList->currStatus = LIST_OOB_START;   // reset the current stats
+    assert(List_prepend(testList, &a[0] ) == 0);
+    assert(List_prepend(testList, &a[1]) == 0);
+    assert(List_prepend(testList, &a[2]) == 0);
+    assert(List_prepend(testList, &a[3]) == 0);
+    assert(List_prepend(testList, &a[4]) == 0);
+
+    assert(testList->currNode == testList->head);
+    assert(testList->currStatus == LIST_OOB_START);
+    assert(numList == 1);
+    assert(numNodes == 5);
+    assert(testList->head->item == &a[4]);
+    assert(testList->tail->item == &a[0]);
+
+    i = 0;
+    while (testList->currNode != NULL){
+        printf("current item %d: %d\n", i+1, *(int*)testList->currNode->item);
+        assert(*(int*)testList->currNode->item == 5-i);
+        List_next(testList);
+        i++;
+    }
+    assert(numList == 1);
+    assert(numNodes == 5);
+    
+    List_next(testList);
+    assert(testList->currNode == NULL);
+    assert(testList->currStatus == LIST_OOB_END);
 }
-
-
-
-
-
-
 
 // Test Suite 3: Movement of current pointer
-void test_current(){
+void test_currMovement(List* testList){
+    assert(testList != NULL);
+    int a[5] = {1,2,3,4,5};
+
+    printf("Testing for empty case...\n");
+    assert(testList->listSize == 0);
+    assert(List_first(testList) == NULL);
+    assert(testList->currNode == NULL);
+    assert(testList->currStatus == LIST_OOB_START);
+
+    assert(List_last(testList) == NULL);
+    assert(testList->currNode == NULL);
+    assert(testList->currStatus == LIST_OOB_START);
+
+    assert(List_append(testList, &a[0]) == 0);
+    assert(List_append(testList, &a[1]) == 0);
+    assert(List_append(testList, &a[2]) == 0);
+    assert(List_append(testList, &a[3]) == 0);
+    assert(List_append(testList, &a[4]) == 0);
+
+    printf("Testing for general case...\n");
+    assert(List_first(testList) == testList->head->item);
+    assert(testList->currNode == testList->head);
+    assert(List_last(testList) == testList->tail->item);
+    assert(testList->currNode == testList->tail);
+    assert(testList->currStatus == LIST_OOB_START);
+
+    printf("all last()/first() test cases passed!\n\n");
+    printf("testing next()/prev()...\n");
+
+    // reset....
+
+    List_first(testList);
+    int i = 1;
+    while (testList->currNode != NULL){
+        assert(testList->currNode->item == i);
+        
+    }
+
+
+
 }
 
-int main(void){
 
-    // test_create();
+
+
+int main(void){
+    List* testList = List_create();
+    // test_create(testList);
     printf("All create() tests passed!\n");
     // test_insert();
-    test_item();
-    // test_current();
-    printf("all test cases passed!");
+    test_item(testList);
+    printf("all insertion/deletion tests passed!\n");
+    List* testList2 = List_create();
+    test_currMovement(testList2);
+    printf("all current pointer movement test cases passed!\n");
+    printf("all test cases passed!\n");
 }
