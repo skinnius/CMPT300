@@ -201,7 +201,7 @@ void* List_next(List* pList){
 void* List_prev(List* pList){
     assert(pList != NULL);
 
-    if (pList->currStatus == LIST_OOB_END){
+    if (pList->currStatus == LIST_OOB_END && pList->currNode == NULL){
         if (List_count(pList) == 0){
             pList->currStatus = LIST_OOB_START;
             return NULL;
@@ -353,7 +353,7 @@ int List_prepend(List* pList, void* pItem){
 void* List_remove(List* pList){
     assert(pList != NULL);
     Node* nodeToBeFreed = pList->currNode;
-    
+
     if (nodeToBeFreed == NULL){            // first check for OOB (covers empty list check)
         return NULL;
     }
