@@ -12,7 +12,6 @@
 
 typedef struct Node_s Node;
 struct Node_s {
-    // TODO: You should change this
     void* item;         
     Node* prev;
     Node* next;
@@ -24,7 +23,6 @@ enum ListOutOfBounds {
 };
 typedef struct List_s List;
 struct List_s{
-    // TODO: You should change this!
     int listSize;
     Node* head;
     Node* tail;

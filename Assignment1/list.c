@@ -4,7 +4,7 @@
 
 static List availableLists[LIST_MAX_NUM_HEADS];    // global statically allocated list of possible unique Lists --> Array of List pointers
 static Node availableNodes[LIST_MAX_NUM_NODES];         // global statically allocated list of nodes.
-static int numList = 0;
+static int numHeads = 0;
 static int numNodes = 0;
 static bool initialSetup = true;
 static Node* nodeHead;
@@ -91,7 +91,7 @@ static void freeList(List* pList){
     pList->tail = NULL;
     pList->listSize = 0;
 
-    numList--;
+    numHeads--;
     
 }
 // Makes a new, empty list, and returns its reference on success. 
@@ -134,10 +134,10 @@ List* List_create(){
 
     }
 
-    if (numList < LIST_MAX_NUM_HEADS){
+    if (numHeads < LIST_MAX_NUM_HEADS){
         if (listHead == listTail){
             newList = listHead;
-            numList++;
+            numHeads++;
             return newList;
         }
 
@@ -145,7 +145,7 @@ List* List_create(){
             listHead = listHead->next;
         }
         newList = listHead;
-        numList++;
+        numHeads++;
     }
     initialSetup = false;
     return newList;
@@ -439,7 +439,7 @@ void* List_trim(List* pList){
 // Adds pList2 to the end of pList1. The current pointer is set to the current pointer of pList1. 
 // pList2 no longer exists after the operation; its head is available
 // for future operations.
-void List_concat(List* pList1, List* pList2){           // this feels a little sketchy, might be source of problem in future tests
+void List_concat(List* pList1, List* pList2){           
     assert(pList1 != NULL);
     assert(pList2 != NULL);
     assert(pList1 != pList2);
@@ -494,7 +494,7 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
     pList->currNode = NULL;
     pList->currStatus = LIST_OOB_START;
 
-    numList--;
+    numHeads--;
 
 }
 

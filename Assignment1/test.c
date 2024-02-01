@@ -1,4 +1,11 @@
-#include "list.c"
+#include "list.h"
+#include <stdio.h>
+#include <assert.h>
+#include <stdlib.h>
+
+
+static int numNodes = 0;
+static int numHeads = 0;
 
 //FREE_FN
 void freeItem(void* pItem){
@@ -13,6 +20,40 @@ int equals(void* item1, void* item2) {
     return 0;
 }
 
+void print_list_in_order(List* pList, Node* curr){
+    if (List_count(pList) == 0){
+        printf("empty list %d\n", (int)pList);
+        return;
+    }
+
+    while (curr != NULL){
+        printf("%d", *(int*)curr->item);
+        curr = curr->next;
+    }
+    printf("Length of list: %d\n", List_count(pList));
+}
+
+void print_list_reverse(List* pList, Node* curr){
+    if (List_countt(pList) == 0){
+        printf("empty list %d\n", (int)pList);
+        return;
+    }
+
+    while (curr != NULL){
+        printf("%d", *(int*)curr->item);
+        curr = curr->prev;
+    }
+    printf("Length of list: %d\n", List_count(pList));
+}
+
+
+
+
+
+
+
+
+
 // Test Suite 1: List creation.
 void test_create(){
     // Test case 1: testing for creation of lists
@@ -26,21 +67,21 @@ void test_create(){
         assert(newList->tail == NULL);
         assert(List_count(newList) == 0);
 
-        if (numList == LIST_MAX_NUM_HEADS){
+        if (numHeads == LIST_MAX_NUM_HEADS){
             assert(newList->next == NULL);
         }
         else{
             assert(newList->next != NULL);
         }
     }
-    printf("current number of heads in list: %d\n",numList);
+    printf("current number of heads in list: %d\n",numHeads);
 
     // Test case 2: attempting to create a new list after reaching maximum capacity (boundary)
     List* failList = List_create();
     assert(failList == NULL);
 
     // Test case 3: extra tests for good measure
-    for (numList = 10; numList < 10000; numList++){
+    for (numHeads = 10; numHeads < 10000; numHeads++){
         List* newList = List_create();
         assert(newList == NULL);
     }
@@ -247,7 +288,7 @@ void test_item(List* testList){
     assert(List_insert_after(testList, &a[4]) == 0);
 
 
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 5);
     assert(testList->currNode == testList->tail);
     assert(testList->currStatus == LIST_OOB_START);
@@ -273,7 +314,7 @@ void test_item(List* testList){
         assert(testList->currStatus == LIST_OOB_END);
         List_prev(testList);
     }
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 0);
     assert(testList->currNode == NULL);
     assert(testList->currStatus == LIST_OOB_START);
@@ -288,7 +329,7 @@ void test_item(List* testList){
     assert(List_insert_before(testList, &a[4]) == 0);
 
 
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 5);
     assert(testList->currNode == testList->head);
     assert(testList->currStatus == LIST_OOB_START);        
@@ -312,7 +353,7 @@ void test_item(List* testList){
         printf("removed item %d: %d\n", i+1, *(int*)testList->currNode->item);
         assert(*(int*)List_remove(testList) == a[4-i]);
     }
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 0);
     assert(testList->currNode == NULL);
     assert(testList->tail == NULL);
@@ -329,7 +370,7 @@ void test_item(List* testList){
     assert(List_append(testList, &a[3]) == 0);
     assert(List_append(testList, &a[4]) == 0);
 
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 5);
     assert(testList->currNode == testList->tail);
     assert(testList->currStatus == LIST_OOB_START);
@@ -343,7 +384,7 @@ void test_item(List* testList){
         List_prev(testList);
         i++;
     }
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 5);
 
     List_prev(testList);
@@ -359,7 +400,7 @@ void test_item(List* testList){
         i++;
     }
 
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 0);
 
     // List_prepend() test cases
@@ -372,7 +413,7 @@ void test_item(List* testList){
 
     assert(testList->currNode == testList->head);
     assert(testList->currStatus == LIST_OOB_START);
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 5);
     assert(testList->head->item == &a[4]);
     assert(testList->tail->item == &a[0]);
@@ -384,7 +425,7 @@ void test_item(List* testList){
         List_next(testList);
         i++;
     }
-    assert(numList == 1);
+    assert(numHeads == 1);
     assert(numNodes == 5);
     
     List_next(testList);
@@ -456,10 +497,10 @@ void test_concat(){
     // case 1: both empty lists.
     List* pList1 = List_create();
     List* pList2 = List_create();
-    assert(numList == 4);
+    assert(numHeads == 4);
 
     List_concat(pList1, pList2);
-    assert(numList == 3);
+    assert(numHeads == 3);
 
     // make sure pList2 was properly freed
     assert(pList2->currNode == NULL);
@@ -476,7 +517,7 @@ void test_concat(){
 
     // case 2: list1 is empty
     List* testList = List_create();
-    assert(numList == 4);
+    assert(numHeads == 4);
     assert(List_append(testList, a[0]) == 0);
     assert(List_append(testList, a[1]) == 0);
     assert(List_append(testList, a[2]) == 0);
@@ -485,7 +526,7 @@ void test_concat(){
 
 
     List_concat(pList1, testList);
-    assert(numList == 3);
+    assert(numHeads == 3);
     assert(pList1->head->item == a[0]);
     assert(pList1->tail->item == a[4]);
     assert(pList1->currNode == NULL);
@@ -501,9 +542,9 @@ void test_concat(){
     // case 3: list2 is empty
 
     List* testList2 = List_create();
-    assert(numList == 4);
+    assert(numHeads == 4);
     List_concat(pList1, pList2);
-    assert(numList == 3);
+    assert(numHeads == 3);
 
     assert(pList1->head->item == a[0]);
     assert(pList1->tail->item == a[4]);
@@ -526,9 +567,9 @@ void test_concat(){
     assert(List_append(testList3, b[2]) == 0);
     assert(List_append(testList3, b[3]) == 0);
     assert(List_append(testList3, b[4]) == 0);
-    assert(numList == 4);
+    assert(numHeads == 4);
     List_concat(pList1, testList3);
-    assert(numList == 3);
+    assert(numHeads == 3);
 
     assert(pList1->head->item == a[0]);
     assert(pList1->tail->item == b[4]);
@@ -542,8 +583,8 @@ void test_concat(){
         printf("%s\n", (char*)List_next(pList1));
     }
 
-    printf("%d\n", numList);
-    for (int i = numList; i < LIST_MAX_NUM_HEADS; i++){
+    printf("%d\n", numHeads);
+    for (int i = numHeads; i < LIST_MAX_NUM_HEADS; i++){
         List* newList = List_create();
         assert(newList != NULL);
         
@@ -596,7 +637,7 @@ static void test_node_removal(){
 
 
 void test_free(){
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
     List* temp = List_create();
     List_append(temp, "c");
     List_trim(temp);
@@ -607,22 +648,22 @@ void test_free(){
     assert(temp->listSize == 0);
 
     List_free(temp, freeItem);
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
 
     for (int i = 0; i < LIST_MAX_NUM_HEADS - 1; i++){
         List* temp = List_create();
     }
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
 
     List* l1 = List_create();
     assert(List_create() == NULL);
     List_free(l1, freeItem);
-    assert(numList == LIST_MAX_NUM_HEADS - 1);
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    assert(numHeads == LIST_MAX_NUM_HEADS - 1);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
     
     List* l2 = List_create();
     assert(l2 != NULL);
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
 
     for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
         List_append(l2, "a");
@@ -633,20 +674,20 @@ void test_free(){
         printf("hello %s\n", List_next(l2));
     }
 
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
     assert(l2->listSize == 100);
     List_free(l2, freeItem);
 
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
 
     List* l3 = List_create();
     assert(l3 != NULL);
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
 
     for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
         List_append(l3, "a");
     }
-    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numHeads);
 
     // while (l3->currNode != NULL){
     //     printf("hello %s\n", List_next(l3));
@@ -666,25 +707,25 @@ void test_search(){
 
 
 
-int main(void){
-    // List* testList = List_create();
+// int main(void){
+//     // List* testList = List_create();
 
-    // // IMPORTANT: CAN ONLY RUN ONE FUNCTION AT A TIME, COMMENT THE REST OF THE FUNCTIONS OUT. 
-    // test_create(testList);
-    // printf("All create() tests passed!\n\n");
+//     // // IMPORTANT: CAN ONLY RUN ONE FUNCTION AT A TIME, COMMENT THE REST OF THE FUNCTIONS OUT. 
+//     // test_create(testList);
+//     // printf("All create() tests passed!\n\n");
     
-    // // test_insert();
-    // test_item(testList);
-    // printf("All insertion/deletion tests passed!\n\n");
-    // List* testList2 = List_create();
-    // test_currMovement(testList2);
-    // printf("All current pointer movement test cases passed!\n\n");
+//     // // test_insert();
+//     // test_item(testList);
+//     // printf("All insertion/deletion tests passed!\n\n");
+//     // List* testList2 = List_create();
+//     // test_currMovement(testList2);
+//     // printf("All current pointer movement test cases passed!\n\n");
 
-    // test_concat();
-    // printf("All concat tests passed!\n\n");
-    // test_node_removal();
-    // printf("All remove tests passed! \n\n");
-    // test_free();
-    test_search();
-    printf("All test cases passed!\n");
-}
+//     // test_concat();
+//     // printf("All concat tests passed!\n\n");
+//     // test_node_removal();
+//     // printf("All remove tests passed! \n\n");
+//     // test_free();
+//     test_search();
+//     printf("All test cases passed!\n");
+// }
