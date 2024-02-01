@@ -13,7 +13,7 @@
 typedef struct Node_s Node;
 struct Node_s {
     // TODO: You should change this
-    void* item;          // item contained in the node 
+    void* item;         
     Node* prev;
     Node* next;
 };
@@ -29,8 +29,7 @@ struct List_s{
     Node* head;
     Node* tail;
     Node* currNode;
-    void* current;
-    List* prev;
+    enum ListOutOfBounds currStatus;
     List* next;       
 };
 
