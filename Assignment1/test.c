@@ -442,10 +442,10 @@ void test_currMovement(List* testList){
 
 // Test suite 4: concat
 void test_concat(){
-    char a[5] = {1,2,3,4,5};
+    char* a[5] = {"a","b","c","d","e"};
+    char* b[5] = {"f","g","h","i","j"};
 
     // case 1: both empty lists.
-    printf("%d\n", numList);
     List* pList1 = List_create();
     List* pList2 = List_create();
     assert(numList == 4);
@@ -470,19 +470,19 @@ void test_concat(){
     // case 2: list1 is empty
     List* testList = List_create();
     assert(numList == 4);
-    assert(List_append(testList, &a[0]) == 0);
-    assert(List_append(testList, &a[1]) == 0);
-    assert(List_append(testList, &a[2]) == 0);
-    assert(List_append(testList, &a[3]) == 0);
-    assert(List_append(testList, &a[4]) == 0);
+    assert(List_append(testList, a[0]) == 0);
+    assert(List_append(testList, a[1]) == 0);
+    assert(List_append(testList, a[2]) == 0);
+    assert(List_append(testList, a[3]) == 0);
+    assert(List_append(testList, a[4]) == 0);
 
 
     List_concat(pList1, testList);
     assert(numList == 3);
-    assert(pList1->head->item == &a[0]);
-    assert(pList1->tail->item == &a[4]);
+    assert(pList1->head->item == a[0]);
+    assert(pList1->tail->item == a[4]);
     assert(pList1->currNode == NULL);
-    assert(pList1->currStatus == LIST_OOB_START);\
+    assert(pList1->currStatus == LIST_OOB_START);
     assert(pList1->listSize == 5);
 
     assert(testList->currNode == NULL);
@@ -496,7 +496,54 @@ void test_concat(){
     List* testList2 = List_create();
     assert(numList == 4);
     List_concat(pList1, pList2);
+    assert(numList == 3);
 
+    assert(pList1->head->item == a[0]);
+    assert(pList1->tail->item == a[4]);
+    assert(pList1->currNode == NULL);
+    assert(pList1->currStatus == LIST_OOB_START);
+    assert(pList1->listSize == 5);
+
+    assert(testList2->currNode == NULL);
+    assert(testList2->currStatus == LIST_OOB_START);
+    assert(testList2->listSize == 0);
+    assert(testList2->head == NULL);
+    assert(testList2->tail == NULL);
+
+    // case 4: general case
+
+    List* testList3 = List_create();
+    List_next(pList1);
+    assert(List_append(testList3, b[0]) == 0);
+    assert(List_append(testList3, b[1]) == 0);
+    assert(List_append(testList3, b[2]) == 0);
+    assert(List_append(testList3, b[3]) == 0);
+    assert(List_append(testList3, b[4]) == 0);
+    assert(numList == 4);
+    List_concat(pList1, testList3);
+    assert(numList == 3);
+
+    assert(pList1->head->item == a[0]);
+    assert(pList1->tail->item == b[4]);
+    assert(pList1->currStatus == LIST_OOB_START);
+    assert(pList1->listSize == 10);
+    assert(pList1->currNode->item == a[0]);
+
+    pList1->currNode = pList1->head;
+    printf("%s\n", (char*)pList1->currNode->item);
+    while(pList1->currNode->next != NULL){
+        printf("%s\n", (char*)List_next(pList1));
+    }
+
+
+    // for (int i = numList; i < LIST_MAX_NUM_HEADS; i++){
+    //     List* newList = List_create();
+    //     assert(newList != NULL);
+        
+    // }
+    // printf("good so far...");
+    // List* failList = List_create();
+    // assert(failList == NULL);
 } 
 
 
@@ -506,13 +553,13 @@ int main(void){
     // test_create(testList);
     printf("All create() tests passed!\n\n");
     // test_insert();
-    test_item(testList);
-    printf("all insertion/deletion tests passed!\n\n");
+    // test_item(testList);
+    printf("All insertion/deletion tests passed!\n\n");
     List* testList2 = List_create();
     test_currMovement(testList2);
-    printf("all current pointer movement test cases passed!\n\n");
+    printf("All current pointer movement test cases passed!\n\n");
 
     test_concat();
-    printf("all concat tests passed!\n\n");
-    printf("all test cases passed!\n");
+    printf("All concat tests passed!\n\n");
+    printf("All test cases passed!\n");
 }

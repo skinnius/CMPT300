@@ -67,7 +67,7 @@ static void popTail(List* pList){
     pList->tail->next = NULL;
 }
 
-static void freeNode(Node* node){                   // questionable function lmao DELETE THIS COMMENT BEFORE SUBMITTING 
+static void freeNode(Node* node){                   
     nodeTail->next = node;
     node->prev = nodeTail;
     node->next = NULL;
@@ -79,8 +79,8 @@ static void freeList(List* pList){
     listTail->next = pList;
     pList->next = NULL;
     listTail = pList;
-
-    pList->currStatus = LIST_OOB_START;            // try extracting this into a new function
+    
+    pList->currStatus = LIST_OOB_START;            
     pList->currNode = NULL;
     pList->head = NULL;
     pList->tail = NULL;
