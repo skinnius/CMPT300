@@ -7,7 +7,7 @@ void freeItem(void* pItem){
 
 // COMPARATOR_FN
 int equals(void* item1, void* item2) {
-    if ((int*)item1 == *(int*)item2){
+    if (*(int*)item1 == *(int*)item2){
         return 1;
     } 
     return 0;
@@ -16,7 +16,7 @@ int equals(void* item1, void* item2) {
 // Test Suite 1: List creation.
 void test_create(){
     // Test case 1: testing for creation of lists
-    for (int i = 0; i < LIST_MAX_NUM_HEADS; i++){
+    for (int i = 0; i < LIST_MAX_NUM_HEADS - 1; i++){
         List* newList = List_create();
         assert(newList != NULL);
         assert(newList->currStatus == LIST_OOB_START);
@@ -53,184 +53,184 @@ void test_insert(){
     void* testItem = &x;
 
     // Section 1: testing for insert_after()
-    // // test case 1: testing for creation of nodes
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_after(testList, &i) == 0);
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currNode->item == &i);
-    //     assert(testList->currStatus == LIST_OOB_START);
+    // test case 1: testing for creation of nodes
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_after(testList, &i) == 0);
+        assert(testList->currNode != NULL);
+        assert(testList->currNode->item == &i);
+        assert(testList->currStatus == LIST_OOB_START);
 
-    //     // empty list case
-    //     if (List_count(testList) == 1){
-    //         assert(testList->head = testList->currNode);
-    //         assert(testList->currStatus == LIST_OOB_START);
-    //     }
+        // empty list case
+        if (List_count(testList) == 1){
+            assert(testList->head = testList->currNode);
+            assert(testList->currStatus == LIST_OOB_START);
+        }
 
-    //     printf("%d\n", *(int*)(testList->currNode->item));
-    // }
+        printf("%d\n", *(int*)(testList->currNode->item));
+    }
 
-    // // Test case 2: attempting to insert a new node after reaching max capacity
-    // assert(List_insert_after(testList, testItem) == -1);
+    // Test case 2: attempting to insert a new node after reaching max capacity
+    assert(List_insert_after(testList, testItem) == -1);
     
-    // // more test cases for good measure
-    // for (numNodes = LIST_MAX_NUM_NODES;  numNodes< 10000000; numNodes++){
-    //     assert(List_insert_after(testList, testItem) == -1);
-    // }
+    // more test cases for good measure
+    for (numNodes = LIST_MAX_NUM_NODES;  numNodes< 10000000; numNodes++){
+        assert(List_insert_after(testList, testItem) == -1);
+    }
 
-    // // Test case 3: Inserting at the beginning of the list.
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_after(testList, &i) == 0);
-    //     assert(testList->listSize == i + 1);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+    // Test case 3: Inserting at the beginning of the list.
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_after(testList, &i) == 0);
+        assert(testList->listSize == i + 1);
+        printf("%d\n", *(int*)testList->currNode->item);
 
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currStatus == LIST_OOB_START);
-    //     assert(testList->currNode == testList->head);
+        assert(testList->currNode != NULL);
+        assert(testList->currStatus == LIST_OOB_START);
+        assert(testList->currNode == testList->head);
 
-    //     testList->currNode = NULL;
-    //     testList->currStatus = LIST_OOB_START;
+        testList->currNode = NULL;
+        testList->currStatus = LIST_OOB_START;
 
-    // }
+    }
     
-    // // Test case 4: Inserting at the end of the list. (OOB)
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_after(testList, &i) == 0);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+    // Test case 4: Inserting at the end of the list. (OOB)
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_after(testList, &i) == 0);
+        printf("%d\n", *(int*)testList->currNode->item);
 
-    //     assert(testList->currNode != NULL);
-    //     if (i > 0){
-    //         assert(testList->currStatus == LIST_OOB_END);
-    //     }
-    //     assert(testList->currNode == testList->tail);
+        assert(testList->currNode != NULL);
+        if (i > 0){
+            assert(testList->currStatus == LIST_OOB_END);
+        }
+        assert(testList->currNode == testList->tail);
 
-    //     testList->currNode = NULL;
-    //     testList->currStatus = LIST_OOB_END;
-    // }
+        testList->currNode = NULL;
+        testList->currStatus = LIST_OOB_END;
+    }
 
-    // //Test case 4.1: Inserting at the end of the list. (Tail)
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_after(testList, &i) == 0);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+    //Test case 4.1: Inserting at the end of the list. (Tail)
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_after(testList, &i) == 0);
+        printf("%d\n", *(int*)testList->currNode->item);
 
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currStatus == LIST_OOB_START);
-    //     assert(testList->currNode == testList->tail);
+        assert(testList->currNode != NULL);
+        assert(testList->currStatus == LIST_OOB_START);
+        assert(testList->currNode == testList->tail);
 
-    //     testList->currNode = testList->tail;
-    // }
+        testList->currNode = testList->tail;
+    }
 
 
-    // // Test case 5: Inserting at the middle of the list. (General case)
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_after(testList, testItem) == 0);
-    //     printf("%d\n", i);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+    // Test case 5: Inserting at the middle of the list. (General case)
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_after(testList, testItem) == 0);
+        printf("%d\n", i);
+        printf("%d\n", *(int*)testList->currNode->item);
         
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currStatus == LIST_OOB_START);
-    //     assert(testList->listSize == i + 1);
+        assert(testList->currNode != NULL);
+        assert(testList->currStatus == LIST_OOB_START);
+        assert(testList->listSize == i + 1);
 
-    //     if (i <= 1){
-    //         assert(testList->currNode == testList->tail);
-    //     }
+        if (i <= 1){
+            assert(testList->currNode == testList->tail);
+        }
 
-    //     if (i > 2){
-    //         assert(testList->currNode == testList->tail->prev);
-    //     }
-    //     if (i > 1){
-    //         testList->currNode = testList->tail->prev;
-    //     }
-    // }
+        if (i > 2){
+            assert(testList->currNode == testList->tail->prev);
+        }
+        if (i > 1){
+            testList->currNode = testList->tail->prev;
+        }
+    }
 
     // Section 2: testing for insert_before()
 
-    // // Test case 1: testing for creation of nodes
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_before(testList, &i) == 0);
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currNode->item == &i);
-    //     assert(testList->currStatus == LIST_OOB_START);
+    // Test case 1: testing for creation of nodes
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_before(testList, &i) == 0);
+        assert(testList->currNode != NULL);
+        assert(testList->currNode->item == &i);
+        assert(testList->currStatus == LIST_OOB_START);
 
-    //     // empty list case
-    //     if (List_count(testList) == 1){
-    //         assert(testList->head = testList->currNode);
-    //         assert(testList->currStatus == LIST_OOB_START);
-    //     }
+        // empty list case
+        if (List_count(testList) == 1){
+            assert(testList->head = testList->currNode);
+            assert(testList->currStatus == LIST_OOB_START);
+        }
 
-    //     printf("%d\n", *(int*)(testList->currNode->item));
-    // }
+        printf("%d\n", *(int*)(testList->currNode->item));
+    }
 
-    // // Test case 2: attempting to insert a new node after reaching max capacity
-    // assert(List_insert_before(testList, testItem) == -1);
+    // Test case 2: attempting to insert a new node after reaching max capacity
+    assert(List_insert_before(testList, testItem) == -1);
     
-    // // more test cases for good measure
-    // for (numNodes = LIST_MAX_NUM_NODES;  numNodes< 10000000; numNodes++){
-    //     assert(List_insert_before(testList, testItem) == -1);
-    // }
+    // more test cases for good measure
+    for (numNodes = LIST_MAX_NUM_NODES;  numNodes< 10000000; numNodes++){
+        assert(List_insert_before(testList, testItem) == -1);
+    }
 
-    // // Test case 3: Inserting at the end of the list.
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     testList->currNode = NULL;
-    //     testList->currStatus = LIST_OOB_END;
+    // Test case 3: Inserting at the end of the list.
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        testList->currNode = NULL;
+        testList->currStatus = LIST_OOB_END;
 
-    //     assert(List_insert_before(testList, &i) == 0);
-    //     assert(testList->listSize == i + 1);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+        assert(List_insert_before(testList, &i) == 0);
+        assert(testList->listSize == i + 1);
+        printf("%d\n", *(int*)testList->currNode->item);
 
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currStatus == LIST_OOB_END);
-    //     assert(testList->currNode == testList->tail);
-    // }
+        assert(testList->currNode != NULL);
+        assert(testList->currStatus == LIST_OOB_END);
+        assert(testList->currNode == testList->tail);
+    }
 
     
-    // // Test case 4: Inserting at the start of the list. (OOB)
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_before(testList, &i) == 0);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+    // Test case 4: Inserting at the start of the list. (OOB)
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_before(testList, &i) == 0);
+        printf("%d\n", *(int*)testList->currNode->item);
 
-    //     assert(testList->currNode != NULL);
-    //     if (i > 0){
-    //         assert(testList->currStatus == LIST_OOB_START);
-    //     }
-    //     assert(testList->currNode == testList->head);
+        assert(testList->currNode != NULL);
+        if (i > 0){
+            assert(testList->currStatus == LIST_OOB_START);
+        }
+        assert(testList->currNode == testList->head);
 
-    //     testList->currNode = NULL;
-    //     testList->currStatus = LIST_OOB_START;
-    // }
+        testList->currNode = NULL;
+        testList->currStatus = LIST_OOB_START;
+    }
 
     // Test case 4.1: Inserting at the end of the list. (Head)
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_before(testList, &i) == 0);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_before(testList, &i) == 0);
+        printf("%d\n", *(int*)testList->currNode->item);
 
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currStatus == LIST_OOB_START);
-    //     assert(testList->currNode == testList->head);
+        assert(testList->currNode != NULL);
+        assert(testList->currStatus == LIST_OOB_START);
+        assert(testList->currNode == testList->head);
 
-    //     testList->currNode = testList->head;
-    // }
+        testList->currNode = testList->head;
+    }
 
-    // // Test case 5: Inserting at the middle of the list. (General case)
-    // for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
-    //     assert(List_insert_before(testList, testItem) == 0);
-    //     printf("%d\n", i);
-    //     printf("%d\n", *(int*)testList->currNode->item);
+    // Test case 5: Inserting at the middle of the list. (General case)
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_insert_before(testList, testItem) == 0);
+        printf("%d\n", i);
+        printf("%d\n", *(int*)testList->currNode->item);
         
-    //     assert(testList->currNode != NULL);
-    //     assert(testList->currStatus == LIST_OOB_START);
-    //     assert(testList->listSize == i + 1);
+        assert(testList->currNode != NULL);
+        assert(testList->currStatus == LIST_OOB_START);
+        assert(testList->listSize == i + 1);
 
-    //     if (i <= 1){
-    //         assert(testList->currNode == testList->head);
-    //     }
+        if (i <= 1){
+            assert(testList->currNode == testList->head);
+        }
 
-    //     if (i > 2){
-    //         assert(testList->currNode == testList->head->next);
-    //     }
-    //     if (i > 1){
-    //         testList->currNode = testList->head->next;
-    //     }
-    // }
+        if (i > 2){
+            assert(testList->currNode == testList->head->next);
+        }
+        if (i > 1){
+            testList->currNode = testList->head->next;
+        }
+    }
 
 
 }
@@ -594,29 +594,97 @@ static void test_node_removal(){
     assert(List_trim(newList) == "a");
 }
 
-void free_test(){
 
+void test_free(){
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    List* temp = List_create();
+    List_append(temp, "c");
+    List_trim(temp);
+    assert(temp->currNode == NULL);
+    assert(temp->currStatus == LIST_OOB_END);
+    assert(temp->head == NULL);
+    assert(temp->tail == NULL);
+    assert(temp->listSize == 0);
+
+    List_free(temp, freeItem);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+
+    for (int i = 0; i < LIST_MAX_NUM_HEADS - 1; i++){
+        List* temp = List_create();
+    }
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+
+    List* l1 = List_create();
+    assert(List_create() == NULL);
+    List_free(l1, freeItem);
+    assert(numList == LIST_MAX_NUM_HEADS - 1);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    
+    List* l2 = List_create();
+    assert(l2 != NULL);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        List_append(l2, "a");
+    }
+    l2->currNode = l2->head;
+
+    while(l2->currNode != NULL){
+        printf("hello %s\n", List_next(l2));
+    }
+
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+    assert(l2->listSize == 100);
+    List_free(l2, freeItem);
+
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+
+    List* l3 = List_create();
+    assert(l3 != NULL);
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+
+    for (int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        List_append(l3, "a");
+    }
+    printf("number of nodes: %d, number of heads: %d \n", numNodes, numList);
+
+    // while (l3->currNode != NULL){
+    //     printf("hello %s\n", List_next(l3));
+    // }
+
+}
+
+void test_search(){
+    List* lst = List_create();
+    List_append(lst, "a");
+    List_append(lst, "b");
+
+    assert(List_search(lst, equals, "a") != NULL);
+    assert(List_search(lst, equals, "c") == NULL);
 }
 
 
 
 
-
 int main(void){
-    List* testList = List_create();
+    // List* testList = List_create();
+
+    // // IMPORTANT: CAN ONLY RUN ONE FUNCTION AT A TIME, COMMENT THE REST OF THE FUNCTIONS OUT. 
     // test_create(testList);
-    printf("All create() tests passed!\n\n");
-    // test_insert();
+    // printf("All create() tests passed!\n\n");
+    
+    // // test_insert();
     // test_item(testList);
-    printf("All insertion/deletion tests passed!\n\n");
-    List* testList2 = List_create();
-    test_currMovement(testList2);
-    printf("All current pointer movement test cases passed!\n\n");
+    // printf("All insertion/deletion tests passed!\n\n");
+    // List* testList2 = List_create();
+    // test_currMovement(testList2);
+    // printf("All current pointer movement test cases passed!\n\n");
 
-    test_concat();
-    printf("All concat tests passed!\n\n");
-    test_node_removal();
-    printf("All remove tests passed! \n\n");
-
+    // test_concat();
+    // printf("All concat tests passed!\n\n");
+    // test_node_removal();
+    // printf("All remove tests passed! \n\n");
+    // test_free();
+    test_search();
     printf("All test cases passed!\n");
 }

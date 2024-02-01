@@ -417,9 +417,18 @@ void* List_trim(List* pList){
 
     Node* nodeToBeFreed = pList->tail;
     void* currItem = nodeToBeFreed->item;
-    popTail(pList);
 
-    setNewCurrent(pList, pList->tail);
+    if (List_count(pList) == 1){
+        pList->head = NULL;
+        pList->tail = NULL;
+        pList->currStatus = LIST_OOB_END;
+        pList->currNode = NULL;
+    }
+    else{
+        popTail(pList);
+        setNewCurrent(pList, pList->tail);
+    }
+
     freeNode(nodeToBeFreed);
     decreaseListSize(pList);
     
@@ -471,9 +480,11 @@ void List_concat(List* pList1, List* pList2){           // this feels a little s
 void List_free(List* pList, FREE_FN pItemFreeFn){
     assert(pList != NULL);
 
-    while (pList->currNode != NULL){
-        (*pItemFreeFn)(pList->currNode->item);
-        pList->currNode = pList->currNode->next;
+    while (pList->listSize > 0){
+        void* currItem = List_trim(pList);
+        assert(pItemFreeFn);
+        (*pItemFreeFn)(currItem);
+        
         numNodes--;
     }
 
@@ -482,6 +493,7 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
     pList->listSize = 0;
     pList->currNode = NULL;
     pList->currStatus = LIST_OOB_START;
+
     numList--;
 
 }
@@ -515,7 +527,7 @@ void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg){
             return pList->currNode->item;
         }
     }
-    *(int*)pList->currStatus = LIST_OOB_END;
+    pList->currStatus = LIST_OOB_END;
     return NULL;
 
 }
