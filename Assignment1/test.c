@@ -5,6 +5,14 @@ void freeItem(void* pItem){
     pItem = NULL;
 }
 
+// COMPARATOR_FN
+int equals(void* item1, void* item2) {
+    if ((int*)item1 == *(int*)item2){
+        return 1;
+    } 
+    return 0;
+}
+
 // Test Suite 1: List creation.
 void test_create(){
     // Test case 1: testing for creation of lists
@@ -232,7 +240,7 @@ void test_item(List* testList){
     // test for insert_after()
     printf("test_item() running...\n");
     int a[5] = {1,2,3,4,5};
-    assert(List_insert_after(testList, &a[0] ) == 0);
+    assert(List_insert_after(testList, &a[0]) == 0);
     assert(List_insert_after(testList, &a[1]) == 0);
     assert(List_insert_after(testList, &a[2]) == 0);
     assert(List_insert_after(testList, &a[3]) == 0);
@@ -460,7 +468,6 @@ void test_concat(){
     assert(pList2->head == NULL);
     assert(pList2->tail == NULL);
 
-
     assert(pList1->currNode == NULL);
     assert(pList1->currStatus == LIST_OOB_START);
     assert(pList1->listSize == 0);
@@ -535,16 +542,63 @@ void test_concat(){
         printf("%s\n", (char*)List_next(pList1));
     }
 
-
-    // for (int i = numList; i < LIST_MAX_NUM_HEADS; i++){
-    //     List* newList = List_create();
-    //     assert(newList != NULL);
+    printf("%d\n", numList);
+    for (int i = numList; i < LIST_MAX_NUM_HEADS; i++){
+        List* newList = List_create();
+        assert(newList != NULL);
         
-    // }
-    // printf("good so far...");
-    // List* failList = List_create();
-    // assert(failList == NULL);
+    }
+    printf("so far so good...");
+    List* failList = List_create();
+    assert(failList == NULL);
+
+    // cleanup
+    List_free(testList3, &freeItem);
+    assert(testList2->currNode == NULL);
+    assert(testList2->currStatus == LIST_OOB_START);
+    assert(testList2->listSize == 0);
+    assert(testList2->head == NULL);
+    assert(testList2->tail == NULL);
 } 
+
+
+static void test_node_removal(){
+    List* newList = List_create();
+
+    assert(List_trim(newList) == NULL);
+
+    for (int i = numNodes; i < LIST_MAX_NUM_NODES; i++){
+        assert(List_append(newList, "a") == 0);
+    }
+    assert(List_append(newList, "a") == -1);
+    assert(nodeHead->next == NULL);
+    assert(numNodes == 100);
+
+    List_remove(newList);
+    assert(newList->currNode == NULL);
+    assert(nodeHead->next == NULL);
+
+    List_last(newList);
+    List_remove(newList);
+    
+    assert(numNodes == 98);
+    assert(newList->currStatus == LIST_OOB_END);
+
+    assert(List_prepend(newList,"b") == 0);
+    assert(List_insert_after(newList, "c") == 0);
+    assert(List_append(newList, "b") == -1);
+    assert(numNodes == 100);
+
+
+    assert(newList->tail->item == "a");
+    assert(List_trim(newList) == "a");
+}
+
+void free_test(){
+
+}
+
+
 
 
 
@@ -561,5 +615,8 @@ int main(void){
 
     test_concat();
     printf("All concat tests passed!\n\n");
+    test_node_removal();
+    printf("All remove tests passed! \n\n");
+
     printf("All test cases passed!\n");
 }

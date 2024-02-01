@@ -14,6 +14,10 @@ static List* listTail;
 
 static Node* useNode(){
     Node* newNode = nodeHead;
+    if (nodeHead == nodeTail && numNodes < LIST_MAX_NUM_NODES){
+        return nodeHead;
+    }
+
     nodeHead = nodeHead->next;
     return newNode;
 }
@@ -72,6 +76,7 @@ static void freeNode(Node* node){
     node->prev = nodeTail;
     node->next = NULL;
     nodeTail = node;
+
     node->item = NULL;
 }
 
@@ -79,7 +84,7 @@ static void freeList(List* pList){
     listTail->next = pList;
     pList->next = NULL;
     listTail = pList;
-    
+
     pList->currStatus = LIST_OOB_START;            
     pList->currNode = NULL;
     pList->head = NULL;
@@ -126,15 +131,23 @@ List* List_create(){
             nodeHead = &availableNodes[0];
             nodeTail = &availableNodes[LIST_MAX_NUM_NODES - 1];
         }
-        initialSetup = false;
+
     }
 
     if (numList < LIST_MAX_NUM_HEADS){
+        if (listHead == listTail){
+            newList = listHead;
+            numList++;
+            return newList;
+        }
+
+        if (!initialSetup){
+            listHead = listHead->next;
+        }
         newList = listHead;
-        listHead = listHead->next;          // give the new list the memory position of the next available "list position"
         numList++;
     }
-    
+    initialSetup = false;
     return newList;
 }
 
@@ -461,6 +474,7 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
     while (pList->currNode != NULL){
         (*pItemFreeFn)(pList->currNode->item);
         pList->currNode = pList->currNode->next;
+        numNodes--;
     }
 
     pList->head = NULL;
@@ -468,6 +482,8 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
     pList->listSize = 0;
     pList->currNode = NULL;
     pList->currStatus = LIST_OOB_START;
+    numList--;
+
 }
 
 
