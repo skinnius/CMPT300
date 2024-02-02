@@ -4,9 +4,9 @@
 
 static List availableLists[LIST_MAX_NUM_HEADS];    // global statically allocated list of possible unique Lists --> Array of List pointers
 static Node availableNodes[LIST_MAX_NUM_NODES];         // global statically allocated list of nodes.
+static bool initialSetup = true;
 static int numHeads = 0;
 static int numNodes = 0;
-static bool initialSetup = true;
 static Node* nodeHead;
 static Node* nodeTail;
 static List* listHead;
@@ -15,10 +15,13 @@ static List* listTail;
 static Node* useNode(){
     Node* newNode = nodeHead;
     if (nodeHead == nodeTail && numNodes < LIST_MAX_NUM_NODES){
-        return nodeHead;
+        nodeTail = NULL;
+        nodeHead = NULL;
+        return newNode;
     }
-
     nodeHead = nodeHead->next;
+    nodeHead->prev = NULL;
+    newNode->next = NULL;
     return newNode;
 }
 
@@ -38,7 +41,7 @@ static void setNewCurrent(List* pList, Node* newCurrentNode){
 
 static void insertBeforeList(List* pList, Node* newNode, void* pItem){
     newNode->next = pList->head;
-    pList->head->prev = newNode;
+    pList->head->prev = newNode;               
     newNode->prev = NULL;
     newNode->item = pItem;
     pList->head = newNode;
@@ -71,12 +74,18 @@ static void popTail(List* pList){
     pList->tail->next = NULL;
 }
 
-static void freeNode(Node* node){                   
-    nodeTail->next = node;
-    node->prev = nodeTail;
+static void freeNode(Node* node){
+    if (nodeTail == NULL && nodeHead == NULL){
+        nodeTail = node;
+        node->prev = NULL;
+        nodeHead = nodeTail;
+    }
+    else{
+        nodeTail->next = node;
+        node->prev = nodeTail;
+        nodeTail = node;
+    }
     node->next = NULL;
-    nodeTail = node;
-
     node->item = NULL;
 }
 
@@ -482,10 +491,8 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
 
     while (pList->listSize > 0){
         void* currItem = List_trim(pList);
-        assert(pItemFreeFn);
+        assert(pItemFreeFn != NULL);
         (*pItemFreeFn)(currItem);
-        
-        numNodes--;
     }
 
     pList->head = NULL;

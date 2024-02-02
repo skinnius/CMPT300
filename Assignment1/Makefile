@@ -1,5 +1,5 @@
-list: test.c list.h
-	gcc -Wall -std=c99 -O3 -o output test.c list.h
+list: test.c list.c
+	gcc -Wall -std=c99 -ggdb -pedantic-errors -O3 -o out test.c list.c
 
 clean:
-	rm -f output
+	rm -f out.exe 
