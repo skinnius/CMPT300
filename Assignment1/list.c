@@ -90,10 +90,17 @@ static void freeNode(Node* node){
 }
 
 static void freeList(List* pList){
-    listTail->next = pList;
-    pList->next = NULL;
-    listTail = pList;
+    assert(pList != NULL);
+    if (listTail == NULL){
+        listTail = pList;
+        listHead = listTail;
+    }
+    else{
+        listTail->next = pList;
+        listTail = pList;
+    }
 
+    pList->next = NULL;
     pList->currStatus = LIST_OOB_START;            
     pList->currNode = NULL;
     pList->head = NULL;
@@ -144,18 +151,19 @@ List* List_create(){
     }
 
     if (numHeads < LIST_MAX_NUM_HEADS){
+
         if (listHead == listTail){
             newList = listHead;
             numHeads++;
+            listHead = NULL;
+            listTail = NULL;
             return newList;
         }
-
-        if (!initialSetup){
-            listHead = listHead->next;
-        }
         newList = listHead;
+        listHead = listHead->next;
         numHeads++;
     }
+
     initialSetup = false;
     return newList;
 }
@@ -488,20 +496,13 @@ void List_concat(List* pList1, List* pList2){
 
 void List_free(List* pList, FREE_FN pItemFreeFn){
     assert(pList != NULL);
-
+    assert(numHeads > 0);
     while (pList->listSize > 0){
         void* currItem = List_trim(pList);
         assert(pItemFreeFn != NULL);
         (*pItemFreeFn)(currItem);
     }
-
-    pList->head = NULL;
-    pList->tail = NULL;
-    pList->listSize = 0;
-    pList->currNode = NULL;
-    pList->currStatus = LIST_OOB_START;
-
-    numHeads--;
+    freeList(pList);
 
 }
 
@@ -529,10 +530,10 @@ void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg){
 
     while (pList->currNode != NULL){
         int match = (*pComparator)(pList->currNode->item, pComparisonArg);
-        
         if (match){
             return pList->currNode->item;
         }
+        List_next(pList);
     }
     pList->currStatus = LIST_OOB_END;
     return NULL;
