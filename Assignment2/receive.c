@@ -15,12 +15,13 @@
 
 #define MAX_LEN 1024
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t receiveMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t printMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t threadPID;
 
 static int port;
 static int socketDescriptor;
-static char* msg;
+static char buffer[MAX_LEN];
 static List* list;
 
 
@@ -31,7 +32,7 @@ bool isError(int val) {
     return false;
 }
 
-void* receive(void* port)
+void* receiveRoutine(void* unused)
 {
     // initialize...
     struct sockaddr hints; 
@@ -78,21 +79,55 @@ void* receive(void* port)
     while (1) {
         struct sockaddr_in remoteAddress;
         unsigned int addr_len = sizeof(remoteAddress);
-        char buffer[MAX_LEN];
+        memset(&buffer, 0, MAX_LEN); // reset the buffer
 
         int bytesReceived = recvfrom(socketDescriptor, buffer, MAX_LEN, 0, (struct sockaddr*)&remoteAddress, &addr_len);
+
+        if (isError(bytesReceived)) {
+            printf("recvfrom(): %s\n", strerror(errno));
+            return NULL;
+        }
+
         int terminateIndex = (bytesReceived < MAX_LEN) ? bytesReceived : MAX_LEN - 1;
-
-    
         buffer[terminateIndex] = 0;
-        printf("%s\n", buffer);
+
+        pthread_mutex_lock(&receiveMutex);
+        {
+            if (List_append(list, buffer) == -1) {
+                // do something if list is full. 
+            }
+            
+        }
+        pthread_mutex_unlock(&receiveMutex);
+
+
+        return NULL;
+        // print mutex stuff i dont want to touch this in this file.. 
+        // pthread_mutex_lock(&printMutex);
+        // {
+        //     if (List_first(list) == -1) {
+        //         // do something if no elemenets in list. blocked?
+        //     }
+        //     else {
+        //         char* msg = 
+        //     }
+        // }
     }
-
-
-
-
-
-
+    close(socketDescriptor);
 }
+
+void receive_init(char* myPort, List* myList) 
+{
+    port = myPort;
+    list = myList;
+    int threadStatus = pthread_create(&threadPID, NULL, &receiveRoutine, NULL);
+    
+    if (threadStatus != 0) {
+        printf("pthread_create(): %s\n", strerror(errno));
+    }
+}
+
+
+
 
 
