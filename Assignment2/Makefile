@@ -1,6 +1,5 @@
 CFLAGS = -Wall -ggdb -Werror -pedantic-errors -O3
 
-
 # network: Networking.c
 # 	gcc -Wall -ggdb -std=c99 -pedantic-errors -O3 -o out Networking.c
 
