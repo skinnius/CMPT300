@@ -82,11 +82,10 @@ void* receiveThread(void* unused)
 
 
 
-void Receiver_init(char* recvMessage)
+void Receiver_init(char* rm)
 {
     dynamicMessage = malloc(DYNAMIC_LEN);
-
-    recvMessage = recvMessage;
+    recvMessage = rm;
     pthread_create(&threadPID,          // PID (by pointer)
         NULL,                               // attributes
         &receiveThread,                    // function

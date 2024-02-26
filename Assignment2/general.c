@@ -1,5 +1,7 @@
 #include <time.h>
 #include "general.h"
+#include <string.h>
+
 
 void sleep_usec(long usec)
 {

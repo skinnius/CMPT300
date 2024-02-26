@@ -1,8 +1,8 @@
-#ifndef _RECEIVER_H
+#ifndef _RECEIVER_H_
 #define _RECEIVER_H_
 
 // start background receive thread
-void Receiver_init(char* recvMessage);
+void Receiver_init(char* rm);
 
 // stop background receive thread and cleanup
 void Receiver_shutdown(void);

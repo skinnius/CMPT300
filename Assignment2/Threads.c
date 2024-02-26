@@ -22,9 +22,6 @@ int main(int argc, char* argv[])
     printf("Done!\n");
     return 0;
 
-
-
-
         
     // pthread_t threadPID2;
     // pthread_create(&threadPID2, NULL, &receiveThread, "YOOOOOOOOOOOOOOOOOOOOOOOOO WTF");
