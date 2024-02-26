@@ -1,8 +1,14 @@
 #ifndef _RECEIVER_H
 #define _RECEIVER_H_
 
-void Receiver_init(void);
+// start background receive thread
+void Receiver_init(char* recvMessage);
+
+// stop background receive thread and cleanup
 void Receiver_shutdown(void);
+
+// THREADSAFE !! :D
+void Receiver_changeDynamicMessage(char* recvMessage);
 
 
 #endif
