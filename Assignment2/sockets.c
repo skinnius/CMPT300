@@ -11,6 +11,7 @@
 #include <errno.h>
 #include "sockets.h"
 
+#define MAX_LEN 100
 
 bool isError(int val) {
     if (val < 0) {
@@ -21,7 +22,7 @@ bool isError(int val) {
 
 int sockSetup(char* localPortNum)           // return 0 on success, others mean failure. 
 {
-    int numBinds = 0;
+    bool binded = false;
     int status;
     int socketFD;
     int bindStatus;
@@ -39,15 +40,12 @@ int sockSetup(char* localPortNum)           // return 0 on success, others mean 
         fprintf(stderr, "getaddrinfo(): %s\n", gai_strerror(status));
     }
 
-
     // attempt to bind to an address (code inspired by man page of addrinfo(3))
     for (struct addrinfo *p = res; p != NULL; p = p->ai_next) {
         printf("a\n");
         socketFD = socket(PF_INET, SOCK_DGRAM, 0);
 
-
         if (socketFD == -1){          // check if socket() was successful
-            fprintf(stderr, "socket():%d(%s)\n", errno, strerror(errno));
             close(socketFD);
             continue;
         }
@@ -55,32 +53,65 @@ int sockSetup(char* localPortNum)           // return 0 on success, others mean 
         bindStatus = bind(socketFD, p->ai_addr, p->ai_addrlen);
         
         if (isError(bindStatus)) {        // check if bind() was successful
-            fprintf(stderr, "bind():%d(%s)\n", errno, strerror(errno));
             close(socketFD);
             continue;
         }
-        numBinds++;
-        printf("successfully binded...");
+
+        binded = true;
+        printf("successfully binded... YIPPEE\n");
         break;
     }
+    // free the list
+    freeaddrinfo(res);
 
-    if (numBinds == 0) {                // check for failure to bind.
-        printf("bind failure\n");
+    if (!binded) {                // check for failure to bind.
+        fprintf(stderr, "bind():%d(%s)\n", errno, strerror(errno));
         return -1;
     }
-
-    // listen 
-
-    // int listenRet = listen(socketFD, );
-
-
     
-    return 0;
+    return socketFD;
 }
 
 
+void receive(int socketFD) 
+{
+    while (1) {
+        struct sockaddr_in remoteAddress;
+        unsigned int sin_len = sizeof(remoteAddress);
+        char messageRecv[MAX_LEN];
 
-// void freeSocket(addrinfo *serverInfo)
-// {
-//     freeaddrinfo(serverInfo);
-// }
+        int bytesReceived = recvfrom(socketFD, messageRecv, MAX_LEN, 0, (struct sockaddr*)&remoteAddress, &sin_len);
+        int terminateIdx = (bytesReceived < MAX_LEN) ? bytesReceived : MAX_LEN - 1;
+
+
+        messageRecv[terminateIdx] = 0;
+        printf("%s\n", messageRecv);
+        
+        // transmit reply
+        sendto(socketFD, "received", strlen("received"), 0, (struct sockaddr*)&remoteAddress, sin_len);
+    }
+
+}
+
+
+void sendToDest(int socketFD, char* ip, char* port)
+{
+    // first connect to a remote host...
+    struct sockaddr_in dest;
+    memset(&dest, 0, sizeof(dest));
+    dest.sin_port = htons(atoi(port));
+    dest.sin_family = AF_INET;
+    
+    if (inet_pton(AF_INET, ip, &(dest.sin_addr)) < 1) {
+        fprintf(stderr, "inet_pton(): %s\n", strerror(errno));
+    }
+
+    int connectStatus = connect(socketFD, (struct sockaddr*)&dest, sizeof(dest));
+    if (isError(connectStatus)) {
+        fprintf(stderr, "connect(): %s\n", strerror(errno));
+    }
+
+
+    char messageTx[MAX_LEN];
+    sendto(socketFD, messageTx, strlen(messageTx), 0, (struct sockaddr*)&dest, sizeof(dest));
+}
