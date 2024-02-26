@@ -16,10 +16,10 @@
 #define MAX_LEN 1024
 
 static pthread_mutex_t receiveMutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t printMutex = PTHREAD_MUTEX_INITIALIZER;
+// static pthread_mutex_t printMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t threadPID;
 
-static int port;
+static char* port;
 static int socketDescriptor;
 static char buffer[MAX_LEN];
 static List* list;
@@ -35,8 +35,8 @@ bool isError(int val) {
 void* receiveRoutine(void* unused)
 {
     // initialize...
-    struct sockaddr hints; 
-    struct sockaddr* res;
+    struct addrinfo hints; 
+    struct addrinfo* res;
     bool binded = false;
     
 
@@ -47,7 +47,7 @@ void* receiveRoutine(void* unused)
 
     int addrStatus = getaddrinfo(NULL, port, &hints, &res);
     if (isError(addrStatus)) {
-        printf("getaddrinfo(): %s\n", gai_sterror(addrStatus));
+        printf("getaddrinfo(): %s\n", gai_strerror(addrStatus));
     }
 
     for (struct addrinfo* p = res; p != NULL; p = p->ai_next) {
@@ -71,7 +71,7 @@ void* receiveRoutine(void* unused)
     freeaddrinfo(res);
     
     if (!binded) {
-        printf("binded(): %s\n", strerror(errno));
+        printf("failed to bind...\n");
         return NULL;
     }
 
@@ -100,8 +100,6 @@ void* receiveRoutine(void* unused)
         }
         pthread_mutex_unlock(&receiveMutex);
 
-
-        return NULL;
         // print mutex stuff i dont want to touch this in this file.. 
         // pthread_mutex_lock(&printMutex);
         // {
@@ -114,6 +112,7 @@ void* receiveRoutine(void* unused)
         // }
     }
     close(socketDescriptor);
+    return NULL;
 }
 
 void receive_init(char* myPort, List* myList) 
@@ -128,6 +127,19 @@ void receive_init(char* myPort, List* myList)
 }
 
 
+void receive_shutdown(void) 
+{
+    // cancel thread
+    pthread_cancel(threadPID);
 
+    // wait for threads to finish
+    pthread_join(threadPID, NULL);
 
+    // cleanup memory
+    pthread_mutex_lock(&receiveMutex);
+    {
+        List_free(list, free);
+    }
+    pthread_mutex_unlock(&receiveMutex);
+}
 

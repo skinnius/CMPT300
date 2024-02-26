@@ -96,12 +96,14 @@ void receive(int socketFD)
 
 void sendToDest(int socketFD, char* ip, char* port)
 {
+
     // first connect to a remote host...
     struct sockaddr_in dest;
     memset(&dest, 0, sizeof(dest));
     dest.sin_port = htons(atoi(port));
     dest.sin_family = AF_INET;
     
+    printf("passed....\n");
     if (inet_pton(AF_INET, ip, &(dest.sin_addr)) < 1) {
         fprintf(stderr, "inet_pton(): %s\n", strerror(errno));
     }
@@ -111,7 +113,10 @@ void sendToDest(int socketFD, char* ip, char* port)
         fprintf(stderr, "connect(): %s\n", strerror(errno));
     }
 
+    while (1) {
+        char messageTx[MAX_LEN];
+        scanf("%s", messageTx);
+        sendto(socketFD, messageTx, strlen(messageTx), 0, (struct sockaddr*)&dest, sizeof(dest));
+    }
 
-    char messageTx[MAX_LEN];
-    sendto(socketFD, messageTx, strlen(messageTx), 0, (struct sockaddr*)&dest, sizeof(dest));
 }
