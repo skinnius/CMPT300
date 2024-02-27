@@ -11,18 +11,22 @@
 #include <errno.h>
 #include <pthread.h>
 #include "sockets.h"
-#include "list.h"
+#include "receive.h"
 
 #define MAX_LEN 1024
+#define MAX_BUFFER_LEN 256
 
 static pthread_mutex_t receiveMutex = PTHREAD_MUTEX_INITIALIZER;
-// static pthread_mutex_t printMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t threadPID;
 
 static char* port;
 static int socketDescriptor;
 static char buffer[MAX_LEN];
 static List* list;
+
+// sychronization
+static pthread_cond_t s_syncOkToToPrintCondVar = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t s_syncCondMutex = PTHREAD_COND_INITIALIZER;
 
 
 bool isError(int val) {
@@ -34,89 +38,43 @@ bool isError(int val) {
 
 void* receiveRoutine(void* unused)
 {
-    // initialize...
-    struct addrinfo hints; 
-    struct addrinfo* res;
-    bool binded = false;
-    
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_flags = AI_PASSIVE;
-
-    int addrStatus = getaddrinfo(NULL, port, &hints, &res);
-    if (isError(addrStatus)) {
-        printf("getaddrinfo(): %s\n", gai_strerror(addrStatus));
-    }
-
-    for (struct addrinfo* p = res; p != NULL; p = p->ai_next) {
-        
-        socketDescriptor = socket(PF_INET, SOCK_DGRAM, 0);
-        if (socketDescriptor == -1) {
-            close(socketDescriptor);
-            continue;
-        }
-
-        int bindStatus = bind(socketDescriptor, p->ai_addr, p->ai_addrlen);
-        if (isError(bindStatus)) {
-            close(socketDescriptor);            // make sure to close fd after failing to bind!
-            continue;
-        }
-
-        binded = true;      // successfully binded
-        break;
-    }
-
-    freeaddrinfo(res);
-    
-    if (!binded) {
-        printf("failed to bind...\n");
-        return NULL;
-    }
-
     // begin receiving... 
     while (1) {
         struct sockaddr_in remoteAddress;
         unsigned int addr_len = sizeof(remoteAddress);
-        memset(&buffer, 0, MAX_LEN); // reset the buffer
+        memset(&buffer, 0, MAX_BUFFER_LEN); // reset the buffer
 
-        int bytesReceived = recvfrom(socketDescriptor, buffer, MAX_LEN, 0, (struct sockaddr*)&remoteAddress, &addr_len);
+        int bytesReceived = recvfrom(socketDescriptor, buffer, MAX_BUFFER_LEN, 0, (struct sockaddr*)&remoteAddress, &addr_len);
 
         if (isError(bytesReceived)) {
             printf("recvfrom(): %s\n", strerror(errno));
             return NULL;
         }
 
-        int terminateIndex = (bytesReceived < MAX_LEN) ? bytesReceived : MAX_LEN - 1;
+        int terminateIndex = (bytesReceived < MAX_BUFFER_LEN) ? bytesReceived : MAX_BUFFER_LEN - 1;
         buffer[terminateIndex] = 0;
 
         pthread_mutex_lock(&receiveMutex);
         {
-            if (List_append(list, buffer) == -1) {
-                // do something if list is full. 
+            if (List_count(list) == MAX_LEN) {
+                // do something if list is full.
+                printf("List is full");
+                return NULL; 
             }
-            
+            else {
+                List_prepend(list, buffer);     // add stuff to the front, display will take stuff from the back
+            }
         }
         pthread_mutex_unlock(&receiveMutex);
-
-        // print mutex stuff i dont want to touch this in this file.. 
-        // pthread_mutex_lock(&printMutex);
-        // {
-        //     if (List_first(list) == -1) {
-        //         // do something if no elemenets in list. blocked?
-        //     }
-        //     else {
-        //         char* msg = 
-        //     }
-        // }
     }
+
     close(socketDescriptor);
     return NULL;
 }
 
-void receive_init(char* myPort, List* myList) 
+void receive_init(char* myPort, List* myList, int socket) 
 {
+    socketDescriptor = socket;
     port = myPort;
     list = myList;
     int threadStatus = pthread_create(&threadPID, NULL, &receiveRoutine, NULL);
@@ -125,6 +83,18 @@ void receive_init(char* myPort, List* myList)
         printf("pthread_create(): %s\n", strerror(errno));
     }
 }
+
+void* signallerThread(void* unused)
+{
+    // signal other thread
+    pthread_mutex_lock(&s_syncCondMutex);
+    {
+        pthread_cond_signal(&s_syncOkToToPrintCondVar);
+    }
+    pthread_mutex_unlock(&s_syncCondMutex);
+
+}
+
 
 
 void receive_shutdown(void) 
@@ -142,4 +112,3 @@ void receive_shutdown(void)
     }
     pthread_mutex_unlock(&receiveMutex);
 }
-

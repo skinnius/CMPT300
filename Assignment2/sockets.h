@@ -1,10 +1,6 @@
-#ifndef _SOCKETS_H_
-#define _SOCKETS_H_
+#ifndef _SOCKETS_H
+#define _SOCKETS_H
 
-int sockSetup(char* localPortNum);
-void receive(int socketFD);
-void sendToDest(int socketFD, char* ip, char* port);
-
+int getSocketDescriptor(char* localPort);
+    
 #endif
-
-

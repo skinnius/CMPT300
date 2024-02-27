@@ -3,7 +3,7 @@
 #include "list.h"
 
 
-void receive_init(char* myPort, List* myList);
+void receive_init(char* myPort, List* myList, int socket) ;
 
 void receive_shutdown(void);
 
