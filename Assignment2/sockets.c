@@ -18,7 +18,7 @@ int getSocketDescriptor(char* localPort)
 
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(localPort);
+    addr.sin_port = htons(atoi(localPort));
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     
     memset(&addr, 0, sizeof(addr));
@@ -42,8 +42,6 @@ struct addrinfo* getRemoteAddress(char* remoteHostname, char* remotePort)
     // initialization...
     struct addrinfo hints; 
     struct addrinfo* res;
-    bool binded = false;
-    int socketDescriptor;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
@@ -52,14 +50,15 @@ struct addrinfo* getRemoteAddress(char* remoteHostname, char* remotePort)
 
     int addrStatus = getaddrinfo(remotePort, remoteHostname, &hints, &res);
     
-    if (isError(addrStatus)) {
+    if (addrStatus < 0) {
         printf("getaddrinfo() error: %s\n", gai_strerror(addrStatus));
         return NULL;
     }
 
-    return res;
-
+    return res;             // res may need to be cleaned up...
 }
+
+
 
 
 

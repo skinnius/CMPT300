@@ -18,119 +18,65 @@
 
 static pthread_t threadPID;
 static pthread_mutex_t sendMutex = PTHREAD_MUTEX_INITIALIZER; 
-// static pthread_cond_t  
+static pthread_cond_t condSendMutex = PTHREAD_COND_INITIALIZER;
 
 static List* list;
-static char* port;
-static char* hostname;
-static char* msg;
+static char buffer[MAX_BUFFER_LEN];
 static int socketDescriptor;
-static bool binded;
-static struct addrinfo* temp;
-
-
-bool isError(int val) {
-    if (val < 0) {
-        return true;
-    }
-    return false;
-}
+static struct addrinfo* remoteAddress;
 
 
 void* sendRoutine(void* unused)
 {
-    // struct addrinfo hint;
-    // struct addrinfo* res;
-    // bool binded = false;
-    // char dst[IPV4_LEN];
-
-
-    // memset(&hint, 0, sizeof(hint));
-    // hint.ai_family = AF_INET;
-    // hint.ai_socktype = SOCK_DGRAM;
-    // hint.ai_flags = AI_PASSIVE;
-
-    // int addrStatus = getaddrinfo(ip, port, &hint, &res);
-
-    // if (addrStatus != 0) {
-    //     printf("getaddrinfo() error: %s\n", strerror(errno));
-    //     return NULL;
-    // }
-
-    // for (temp = res; temp != NULL; temp = temp->ai_next) {       // attempt to bind (wait hold on do we have to do this for UDP -- nope still need to bind.)
-
-    //     socketDescriptor = socket(PF_INET, SOCK_DGRAM, 0);
-    //     if (socketDescriptor == -1) {
-    //         close(socketDescriptor);
-    //         continue;
-    //     }
-
-    //     int bindStatus = bind(socketDescriptor, temp->ai_addr, temp->ai_addrlen);
-    //     if (isError(bindStatus)) {
-    //         close(socketDescriptor);
-    //         continue;
-    //     }
-
-    //     binded = true;
-    //     break;
-    // }
-
-    // if (!binded) {
-    //     printf("failed to bind...\n");
-    //     return NULL;
-    // }
-
-    // begin sending
-
-    // setup struct for remote peer
-    struct sockaddr_in sin;
-
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(hostname);        // host to network long
-    sin.sin_port = htons(port);
-
     while (1) {
+
+        // wait until confirmation that there is space in the list.... 
+        pthread_mutex_lock(&sendMutex);
+        {
+            pthread_cond_wait(&condSendMutex, &sendMutex);
+        }
+        pthread_mutex_unlock(&sendMutex);
+
+        // copy the last element of the list into a buffer 
         pthread_mutex_lock(&sendMutex);
         {
             // read from the list (consume)
-            if (List_count == 0) {
+            if (List_count(list) == 0) {
                 // do something if no elemenets in list. (Hopefully should never happen)
                 printf("no elements in list");
                 return NULL;
             }
             else {
                 // extract the message
-                msg = (char*)List_trim(list);
+                char* msg = (char*)List_trim(list);
+                strncpy(buffer, msg, MAX_BUFFER_LEN);
+                free(msg);
+                msg = NULL;
             }
-
         }
         pthread_mutex_unlock(&sendMutex);
 
         // send the message out.
-        int sendStatus = sendto(socketDescriptor, msg, sizeof(msg), 0, sin->ai_addr, temp->ai_addrlen);
+        int sendStatus = sendto(socketDescriptor, buffer, sizeof(buffer), 0, remoteAddress->ai_addr, remoteAddress->ai_addrlen);
         
-        if (isError(sendStatus)) {
+        if (sendStatus) {
             printf("sendto() error: %s\n", strerror(errno));
         }
     }
-    freeaddrinfo(res);
-    close(socketDescriptor);
     return NULL;
 }
 
-void send_init(char* remotePort, char* remoteIP, List* myList, int socket)
+void send_init(List* myList, int socket, struct addrinfo* res)
 {
     socketDescriptor = socket;
-    port = remotePort;
-    hostname = remoteIP;
     list = myList;
+    remoteAddress = res;
 
     int threadStatus = pthread_create(&threadPID, NULL, &sendRoutine, NULL);
     
     if (threadStatus != 0) {
         printf("pthread_create() failed: %s\n", strerror(errno));
-        // do we have to free a thread? google it ig
+        // do we have to free a failed thread? google it ig
     }
 
 }

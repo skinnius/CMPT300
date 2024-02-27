@@ -2,7 +2,7 @@
 #define _SEND_H_
 #include "list.h"
 
-void send_init(char* remotePort, char* remoteIP, List* myList, int socket);
+void send_init(List* myList, int socket, struct addrinfo* res);
 
 void send_shutdown(void);
 

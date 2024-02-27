@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     printf("your args: %s, %s, %s \n", localPortNum, remoteHostname, remotePortNum);
 
     // setup local socket
-    int socket = sockSetup(localPortNum);
+    int socket = getSocketDescriptor(localPortNum);
     if (socket < 0) {
         printf("socket setup failed. Please check arguments.\n");
         return -1;
@@ -46,7 +46,11 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    // create the input and output lists
     List* inputList = List_create();
     List* outputList = List_create();
+
+
+    
 
 }
