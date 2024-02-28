@@ -12,9 +12,7 @@
 #include "sockets.h"
 #include "send.h"
 
-#define MAX_LEN 1024
-#define MAX_BUFFER_LEN 256
-#define IPV4_LEN 15
+#define MAX_BUFFER_LEN 1024
 
 static pthread_t threadPID;
 static pthread_mutex_t sendMutex = PTHREAD_MUTEX_INITIALIZER; 

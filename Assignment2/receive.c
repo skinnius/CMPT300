@@ -13,15 +13,14 @@
 #include "sockets.h"
 #include "receive.h"
 
-#define MAX_LEN 1024
-#define MAX_BUFFER_LEN 256
+#define MAX_BUFFER_LEN 1024
 
 static pthread_mutex_t receiveMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t threadPID;
 
 static char* port;
 static int socketDescriptor;
-static char buffer[MAX_LEN];
+static char buffer[MAX_BUFFER_LEN];
 static List* list;
 
 // sychronization
@@ -56,13 +55,15 @@ void* receiveRoutine(void* unused)
 
         pthread_mutex_lock(&receiveMutex);
         {
-            if (List_count(list) == MAX_LEN) {
+            if (List_count(list) == LIST_MAX_NUM_NODES) {
                 // do something if list is full.
                 printf("List is full");
-                return NULL; 
+
+                // wait for space in list. 
+
             }
             else {
-                List_prepend(list, buffer);     // add stuff to the front, display will take stuff from the back
+                List_prepend(list, buffer);
             }
         }
         pthread_mutex_unlock(&receiveMutex);
@@ -83,18 +84,6 @@ void receive_init(char* myPort, List* myList, int socket)
         printf("pthread_create(): %s\n", strerror(errno));
     }
 }
-
-void* signallerThread(void* unused)
-{
-    // signal other thread
-    pthread_mutex_lock(&s_syncCondMutex);
-    {
-        pthread_cond_signal(&s_syncOkToToPrintCondVar);
-    }
-    pthread_mutex_unlock(&s_syncCondMutex);
-
-}
-
 
 
 void receive_shutdown(void) 

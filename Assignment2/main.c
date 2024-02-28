@@ -14,6 +14,7 @@
 #include "send.h"
 #include "receive.h"
 #include "display.h"
+#include "input.h"
 
 
 // ---------- initiate s-talk --------------
@@ -50,7 +51,18 @@ int main(int argc, char* argv[])
     List* inputList = List_create();
     List* outputList = List_create();
 
+    // synchronization
+    static pthread_cond_t syncInput = PTHREAD_COND_INITIALIZER;
+    static pthread_cond_t syncOutput = PTHREAD_COND_INITIALIZER;
 
-    
 
+    receive_init(localPortNum, outputList, socket);
+    send_init(outputList, socket, remoteAddress);
+    input_init(inputList, &syncInput);
+
+
+    // cleanup
+    receive_shutdown();
+    send_shutdown();
+    input_shutdown();
 }

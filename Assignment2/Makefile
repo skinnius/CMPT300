@@ -8,7 +8,7 @@ CFLAGS = -Wall -ggdb -pedantic-errors -O3
 
 
 all: main.c sockets.c send.c
-	gcc $(CFLAGS) main.c sockets.c send.c input.c -lpthread -o s-talk 
+	gcc $(CFLAGS) main.c sockets.c send.c input.c list.o -lpthread -o s-talk 
 
 test: send.c
 	gcc $(CFLAGS) send.c -o a
