@@ -10,30 +10,54 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
-#include "sockets.h"
 #include "receive.h"
 
 #define MAX_BUFFER_LEN 1024
 
-static pthread_mutex_t receiveMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t threadPID;
+static pthread_mutex_t* receiveMutex;
 
-static char* port;
+static pthread_cond_t* syncWithDisplay;
+static pthread_mutex_t* syncWithDisplayMutex;
+
+static pthread_cond_t* shutdownCon;
+static pthread_mutex_t* shutdownConMutex;
+
 static int socketDescriptor;
 static char buffer[MAX_BUFFER_LEN];
 static List* list;
 
-// sychronization
-static pthread_cond_t s_syncOkToToPrintCondVar = PTHREAD_COND_INITIALIZER;
-static pthread_mutex_t s_syncCondMutex = PTHREAD_COND_INITIALIZER;
-
-
-bool isError(int val) {
-    if (val < 0) {
-        return true;
+void signalForShutdown()
+{
+    pthread_mutex_lock(shutdownConMutex);
+    {
+        pthread_cond_signal(shutdownCon);
     }
-    return false;
+    pthread_mutex_unlock(shutdownConMutex);
 }
+
+int addMessageToList(char* msg) 
+{
+    pthread_mutex_lock(receiveMutex);
+    {
+        if (List_prepend(list, msg) == -1) {
+            return -1;
+        }
+    }
+    pthread_mutex_unlock(receiveMutex);
+    return 0;
+}
+
+
+void signalToDisplay()
+{
+    pthread_mutex_lock(syncWithDisplayMutex);
+    {
+        pthread_cond_signal(syncWithDisplay);
+    }
+    pthread_mutex_unlock(syncWithDisplayMutex);
+}
+
 
 void* receiveRoutine(void* unused)
 {
@@ -44,42 +68,50 @@ void* receiveRoutine(void* unused)
         memset(&buffer, 0, MAX_BUFFER_LEN); // reset the buffer
 
         int bytesReceived = recvfrom(socketDescriptor, buffer, MAX_BUFFER_LEN, 0, (struct sockaddr*)&remoteAddress, &addr_len);
-
-        if (isError(bytesReceived)) {
+        if (bytesReceived < 0) {
             printf("recvfrom(): %s\n", strerror(errno));
-            return NULL;
+            break;
         }
 
         int terminateIndex = (bytesReceived < MAX_BUFFER_LEN) ? bytesReceived : MAX_BUFFER_LEN - 1;
-        buffer[terminateIndex] = 0;
+        buffer[terminateIndex] = '\0';
 
-        pthread_mutex_lock(&receiveMutex);
-        {
-            if (List_count(list) == LIST_MAX_NUM_NODES) {
-                // do something if list is full.
-                printf("List is full");
-
-                // wait for space in list. 
-
-            }
-            else {
-                List_prepend(list, buffer);
-            }
+        // check for clean shutdown to terminate
+        if (strlen(buffer) == 2 && ((buffer[0] == '!') && (buffer[1] == '\n'))) {
+            signalForShutdown();
+            break;
         }
-        pthread_mutex_unlock(&receiveMutex);
+        
+        char* msg = (char*)malloc(strlen(buffer) + 1);
+        if (msg == NULL) {
+            break;
+        }
+        strcpy(msg, buffer);
+        
+        if (addMessageToList(msg) == -1) {
+            break;
+        }
+        
+        signalToDisplay();
     }
-
-    close(socketDescriptor);
     return NULL;
 }
 
-void receive_init(char* myPort, List* myList, int socket) 
+
+
+void receive_init(List* myList, int socket, pthread_cond_t* cond, pthread_mutex_t* mutex, pthread_mutex_t* syncm,
+                pthread_cond_t* shutdownCondition, pthread_mutex_t* shutdownMutex) 
 {
     socketDescriptor = socket;
-    port = myPort;
     list = myList;
+    syncWithDisplay = cond;
+    receiveMutex = mutex;
+    syncWithDisplayMutex = syncm;
+    shutdownCon = shutdownCondition;
+    shutdownConMutex = shutdownMutex;
+
     int threadStatus = pthread_create(&threadPID, NULL, &receiveRoutine, NULL);
-    
+
     if (threadStatus != 0) {
         printf("pthread_create(): %s\n", strerror(errno));
     }
@@ -94,10 +126,4 @@ void receive_shutdown(void)
     // wait for threads to finish
     pthread_join(threadPID, NULL);
 
-    // cleanup memory
-    pthread_mutex_lock(&receiveMutex);
-    {
-        List_free(list, free);
-    }
-    pthread_mutex_unlock(&receiveMutex);
 }

@@ -9,19 +9,97 @@
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
-#include "sockets.h"
 #include "list.h"
 #include "send.h"
 #include "receive.h"
 #include "display.h"
 #include "input.h"
 
+// synchronization
+static pthread_cond_t syncInput = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t syncOutput = PTHREAD_COND_INITIALIZER;
+
+static pthread_mutex_t inputSyncMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t outputSyncMutex = PTHREAD_MUTEX_INITIALIZER;
+
+static pthread_mutex_t inputListMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t outputListMutex = PTHREAD_MUTEX_INITIALIZER;
+
+static pthread_cond_t shutdownCondition = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t shutdownMutex = PTHREAD_MUTEX_INITIALIZER;
+
+void callShutdown()
+{
+    pthread_mutex_lock(&shutdownMutex);
+    {
+        // wait for shutdown signal
+        pthread_cond_wait(&shutdownCondition, &shutdownMutex);
+
+        // shutdown...
+        receive_shutdown();
+        send_shutdown();
+        input_shutdown();
+        display_shutdown();
+        
+    }
+    pthread_mutex_unlock(&shutdownMutex);
+}
+
+
+int getSocketDescriptor(char* localPort)
+{
+    // initialization...
+
+    struct sockaddr_in addr;
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(atoi(localPort));
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    int socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+    if (socketDescriptor < 0) {
+        printf("socket() failure: %s\n", strerror(errno));
+        return -1;
+    }
+
+    int bindStatus = bind(socketDescriptor, (struct sockaddr*)&addr, sizeof(addr));
+    if (bindStatus < 0) {
+        printf("failed to bind. %s\n", strerror(errno));
+        close(socketDescriptor);
+        return -1;
+    }
+
+    return socketDescriptor;
+}
+
+struct addrinfo* getRemoteAddress(char* remoteHostname, char* remotePort)
+{
+    // initialization...
+    struct addrinfo hints; 
+    struct addrinfo* res;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    int addrStatus = getaddrinfo(remoteHostname, remotePort, &hints, &res);
+    
+    if (addrStatus < 0) {
+        printf("getaddrinfo() error: %s\n", gai_strerror(addrStatus));
+        return NULL;
+    }
+
+    return res;             // res may need to be cleaned up...
+}
+
 
 // ---------- initiate s-talk --------------
 int main(int argc, char* argv[])
 {
     // check for correct number of args in the command line
-    if (argc != 5) {
+    if (argc != 4) {
         printf("Incorrect number of arguments provided");
         return -1;
     }
@@ -30,8 +108,6 @@ int main(int argc, char* argv[])
     char* localPortNum = argv[1];
     char* remoteHostname = argv[2];
     char* remotePortNum = argv[3];
-    
-    printf("your args: %s, %s, %s \n", localPortNum, remoteHostname, remotePortNum);
 
     // setup local socket
     int socket = getSocketDescriptor(localPortNum);
@@ -44,6 +120,7 @@ int main(int argc, char* argv[])
     struct addrinfo* remoteAddress = getRemoteAddress(remoteHostname, remotePortNum);
     if (remoteAddress == NULL) {
         printf("setup failed. Please check your remote address and port number.\n");
+        close(socket);
         return -1;
     }
 
@@ -51,18 +128,15 @@ int main(int argc, char* argv[])
     List* inputList = List_create();
     List* outputList = List_create();
 
-    // synchronization
-    static pthread_cond_t syncInput = PTHREAD_COND_INITIALIZER;
-    static pthread_cond_t syncOutput = PTHREAD_COND_INITIALIZER;
+    receive_init(outputList, socket, &syncOutput, &outputListMutex, &outputSyncMutex, &shutdownCondition, &shutdownMutex);
+    send_init(inputList, socket, remoteAddress, &syncInput, &inputListMutex, &inputSyncMutex, &shutdownCondition, &shutdownMutex);
+    input_init(inputList, &syncInput, &inputListMutex, &inputSyncMutex);
+    display_init(outputList, &syncOutput, &outputListMutex, &outputSyncMutex);
 
-
-    receive_init(localPortNum, outputList, socket);
-    send_init(outputList, socket, remoteAddress);
-    input_init(inputList, &syncInput);
-
-
-    // cleanup
-    receive_shutdown();
-    send_shutdown();
-    input_shutdown();
+    callShutdown();
+    close(socket);
+    free(remoteAddress);
+    List_free(inputList, free);
+    List_free(outputList, free);
 }
+
