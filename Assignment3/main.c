@@ -19,6 +19,10 @@ static pcb* runningProcess;
 
 static long currPID = 0;
 
+/*-------------------------------------- misc -----------------------------------------------------*/
+
+
+
 
 /* ---------------------------------------- init --------------------------------------------------*/
 
@@ -93,6 +97,36 @@ void createReport(int pid) {
 
 /**---------------------------------------------Fork--------------------------------------------------**/
 
+// returns -1 on failure, pid on success. 
+int forkCommandInterface() {
+
+    if (runningProcess->pid == 0) {         // 0 = pid of init
+        return -1;
+    }
+
+    pcb* processCopy = (pcb*)malloc(sizeof(pcb));
+    processCopy->pid = currPID;
+    currPID++;
+    processCopy->priority = runningProcess->priority;
+    processCopy->processState = READY;
+
+    int success = List_append(readyQueue[processCopy->priority], processCopy);
+
+    if (success < 0) {
+        return -1;
+    }
+
+    return processCopy->pid;
+}
+
+void forkReport(int successState) {
+    if (successState < 0) {
+        printf("Fork command failed. \n");
+    }
+    else {
+        printf("Fork command successful. pid of the new process is %d", &successState);
+    }
+}
 
 
 
@@ -108,7 +142,7 @@ bool inputError(char* userInput) {
     return false;
 }
 
-// returns 1 on success, -1 on failure. 
+// returns 0 on success, -1 on failure. 
 int chooseFunction(char input) {       
     switch(input) {
         case 'C':
@@ -117,6 +151,10 @@ int chooseFunction(char input) {
             break;
 
         case 'F':
+            int success = forkCommandInterface();
+            forkReport(success);
+            break;
+
             // do something
             break;
         case 'K':
@@ -155,7 +193,7 @@ int chooseFunction(char input) {
         default:
             return -1;          // no matches
     }
-    return 1;
+    return 0;
 }
 
 
