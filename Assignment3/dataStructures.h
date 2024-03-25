@@ -10,7 +10,7 @@ typedef struct PCB {
     long pid;           // process id
     int priority;       // prio (0, 1, 2)
     int processState;   // RUNNING, READY, BLOCKED
-    char message[];     // idk whats supposed to go in here lul
+    char proc_message[]; // proc message
 } pcb;
 
 
