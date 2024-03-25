@@ -2,18 +2,33 @@
 #include "list.h"
 
 
-#define RUNNING 1
-#define READY 0
-#define BLOCKED -1
+#define RUNNING 0
+#define READY 1
+#define BLOCKED 2
 
+
+#define SEND 100
+#define RECEIVE 101
+#define REPLY 102
 
 // PCB -> controls the processes
 typedef struct PCB {
     long pid;           // process id
     int priority;       // prio (0, 1, 2)
+    int currentPriority; // currentPriority may differ from original prio.
     int processState;   // RUNNING, READY, BLOCKED
-    char proc_message[40]; // proc message
+    proc_message* message; // proc message
 } pcb;
+
+
+// proc message struct
+typedef struct proc_message {
+    long from;
+    long to;
+    int type;
+    char *msg;
+
+} proc_message;
 
 
 
