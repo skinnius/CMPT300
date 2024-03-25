@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include "list.h"
+
 
 #define RUNNING 1
 #define READY 0
@@ -17,7 +19,7 @@ typedef struct PCB {
 
 // semaphore structure
 typedef struct semaphore {
-    int semaphoreVal;       // value of semaphore
-    pcb* processList;       // list of processes
+    int semaphoreVal;        // value of semaphore
+    List* processList;       // list of processes
 
 } semaphore;

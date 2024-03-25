@@ -13,7 +13,7 @@ static List* sendList;      // queue of processes waiting on send operation
 static List* receiveList;   // queue of processes waiting on receive operation
 static List* blockedList;   // queue of processes that are blocked. 
 
-static semaphore semaphores[5];        // 5 semaphores
+static semaphore* semaphores[5];        // 5 semaphores
 static pcb* runningProcess;
 
 
@@ -21,6 +21,16 @@ static long currPID = 0;
 
 /*-------------------------------------- misc -----------------------------------------------------*/
 
+// pid equals comparator
+bool equalsComparator(void* pItem, void* pComparisonArg) {
+    return (((pcb*)pItem)->pid == *(int*)pComparisonArg);
+}
+
+// free item 
+void freeItem(void* pItem) {
+    free(pItem);
+    pItem = NULL;
+}
 
 
 
@@ -46,7 +56,7 @@ int createProcessInterface() {
     int pid;
 
     while (1) {
-        printf("input process priority (0 = high, 1 = norm, 2 = low). -1 to return to menu ");
+        printf("input process priority (0 = high, 1 = norm, 2 = low). input -1 to return to menu ");
         scanf("%d", &prio);
         
         if (prio == -1) {
@@ -95,7 +105,7 @@ void createReport(int pid) {
 }
 
 
-/**---------------------------------------------Fork--------------------------------------------------**/
+/**--------------------------------------------- Fork --------------------------------------------------**/
 
 // returns -1 on failure, pid on success. 
 int forkCommandInterface() {
@@ -129,6 +139,72 @@ void forkReport(int successState) {
 }
 
 
+/**--------------------------------------------- Kill --------------------------------------------------**/ 
+
+// KILL EVERY PROCESS OCCURENCE IN ALL QUEUES RAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+
+int killProcessInterface() {
+    int pid;
+    int occurenceCounter = 0;
+
+    while (1) {
+        printf("input pid. input -1 to return to menu ");
+        scanf("%d", &pid);
+        
+        if (pid == -1) {
+            return -1;
+        }
+
+        // check running process
+        if (runningProcess->pid == pid) {
+            free(runningProcess);
+            runningProcess = List_trim(readyQueue[0]);              // figure out how to get next process into running. **** FIX THIS SHIT !!! FIX THIS SHIT!! FIX THIS SHIT!!!
+        }
+
+
+        for (int i = 0; i < 3; i++) {           // check through all ready queues
+            List* currList = readyQueue[i];
+            occurenceCounter += removeProcessInList(currList, &pid);
+        }
+
+        // check through send list
+        occurenceCounter += removeProcessInList(sendList, &pid);
+        // check through receive list
+        occurenceCounter += removeProcessInList(receiveList, &pid);
+
+        // check through all semaphore queues
+        for (int i = 0; i < 5; i++) {           
+            semaphore* currSemaphore = semaphores[i];
+            List* currList = currSemaphore->processList;
+            occurenceCounter += removeProcessInList(currList, &pid);
+        }
+    }
+
+    return occurenceCounter;
+}
+
+int removeProcessInList(List* pList, int* pid) {
+    List_first(pList);
+    pcb* process = List_search(sendList, equalsComparator, pid);
+    if (process != NULL) {
+        List_remove(pList);
+        return 1;
+    }
+    return 0;
+}
+
+
+void killReport(int num) {
+    if (num < 0) {
+        printf("Kill failed");
+    }
+    else if (num == 0) {
+        printf("No process with matching id found");
+    }
+    else {
+        printf("%d instances of process killed", &num);
+    }
+}
 
 
 /** ------------------------------------------- User Input------------------------------------------ **/
@@ -151,14 +227,14 @@ int chooseFunction(char input) {
             break;
 
         case 'F':
-            int success = forkCommandInterface();
-            forkReport(success);
+            int fork = forkCommandInterface();
+            forkReport(fork);
             break;
 
-            // do something
-            break;
         case 'K':
-            // do something 
+            int kill = killProcessInterface();
+
+
             break;
         case 'E':
             // do something
