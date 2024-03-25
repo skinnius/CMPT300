@@ -12,7 +12,7 @@ typedef struct PCB {
     long pid;           // process id
     int priority;       // prio (0, 1, 2)
     int processState;   // RUNNING, READY, BLOCKED
-    char proc_message[]; // proc message
+    char proc_message[40]; // proc message
 } pcb;
 
 

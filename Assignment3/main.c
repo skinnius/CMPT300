@@ -32,6 +32,31 @@ void freeItem(void* pItem) {
     pItem = NULL;
 }
 
+/** ------------------------------------------- Scheduling ------------------------------------------ **/
+
+void cpu_scheduler() {
+    // go through the three different queue levels
+    for (int i = 0; i < 3; i++) {
+        List* currList = readyQueue[i];
+        if (List_count(currList) == 0) {
+            continue;
+        }
+
+        pcb* newRunningProcess = List_trim(currList);
+        
+    }
+
+    runningProcess = 
+
+
+
+
+}
+
+
+
+
+
 
 
 /* ---------------------------------------- init --------------------------------------------------*/
@@ -45,6 +70,8 @@ pcb* createInitProcess() {
 
     return init;
 }
+
+
 
 
 /* ---------------------------------------- Create --------------------------------------------------*/
@@ -233,8 +260,7 @@ int chooseFunction(char input) {
 
         case 'K':
             int kill = killProcessInterface();
-
-
+            killReport(kill);
             break;
         case 'E':
             // do something
@@ -273,13 +299,27 @@ int chooseFunction(char input) {
 }
 
 
+void initializeLists() {
+    for (int i = 0; i < 3; i++) {
+        readyQueue[i] = List_create();
+    }
+
+    sendList = List_create();
+    receiveList = List_create();
+
+    for (int i = 0; i < 5; i++) {
+        semaphore* curr = semaphores[i];
+        curr->processList = List_create();
+    }
+}
+
 
 int main() {
     char* userInput;
     pcb* init = createInitProcess();
     runningProcess = init;
 
-
+    initializeLists();
     while (runningProcess != NULL) {
         printf("Enter a command: ");
         scanf("%s", &userInput);
