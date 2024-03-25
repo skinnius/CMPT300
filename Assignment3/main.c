@@ -14,12 +14,39 @@ static List receiveList;   // queue of processes waiting on receive operation
 static List blockedList;   // queue of processes that are blocked. 
 
 static semaphore semaphores[5];        // 5 semaphores
+static pcb* runningProcess;
+
 
 static long currPID = 0;
 
 
+/* ---------------------------------------- init --------------------------------------------------*/
+
+// creating the init process -- called once and never again. 
+pcb* createInitProcess() {
+    pcb* init = (pcb*)malloc(sizeof(pcb));
+    init->pid = currPID;
+    currPID++;
+    init->processState = RUNNING;
+
+    return init;
+}
 
 
+
+
+
+
+
+
+
+
+
+
+/** ------------------------------------------- User Input------------------------------------------ **/
+
+
+// error checking
 bool inputError(char* userInput) {
     if (strlen(userInput) != 1) {
         return true;
@@ -78,8 +105,11 @@ int chooseFunction(char input) {
 
 int main() {
     char* userInput;
+    pcb* init = createInitProcess();
+    runningProcess = init;
 
-    while (1) {
+
+    while (runningProcess != NULL) {
         printf("Enter a command: ");
         scanf("%s", &userInput);
 
@@ -88,14 +118,12 @@ int main() {
             continue;
         }
         
-        chooseFunction(toupper(userInput[0]));
+        if (chooseFunction(toupper(userInput[0])) == -1) {
+            printf("invalid input");
+            continue;
+        }
 
-
-
-
-
-
-
+        
 
 
     }
