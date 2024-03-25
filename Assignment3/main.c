@@ -7,11 +7,11 @@
 #include "list.h"
 #include "dataStructures.h"
 
-static List readyQueue[3];    // 3 ready queues
+static List* readyQueue[3];    // 3 ready queues
 
-static List sendList;      // queue of processes waiting on send operation
-static List receiveList;   // queue of processes waiting on receive operation
-static List blockedList;   // queue of processes that are blocked. 
+static List* sendList;      // queue of processes waiting on send operation
+static List* receiveList;   // queue of processes waiting on receive operation
+static List* blockedList;   // queue of processes that are blocked. 
 
 static semaphore semaphores[5];        // 5 semaphores
 static pcb* runningProcess;
@@ -33,11 +33,65 @@ pcb* createInitProcess() {
 }
 
 
+/* ---------------------------------------- Create --------------------------------------------------*/
+
+// creating a new process -- return pid on success, -1 on failure.
+
+int createProcessInterface() {
+    int prio;
+    int pid;
+
+    while (1) {
+        printf("input process priority (0 = high, 1 = norm, 2 = low). -1 to return to menu ");
+        scanf("%d", &prio);
+        
+        if (prio == -1) {
+            return -1;
+        }
+
+        if (prio < -1 || prio > 2) {
+            printf("invalid input.\n");
+            continue;
+        }
+        
+        pid = createNewProcess(prio);
+        return pid;
+    }
+}
 
 
+int createNewProcess(int prio) {
+    pcb* newProcess = (pcb*)malloc(sizeof(pcb));
+
+    if (newProcess = NULL) {
+        return -1;
+    }
+
+    newProcess->pid = currPID;
+    currPID++;
+    newProcess->priority = prio;
+    newProcess->processState = READY;
+
+    int success = List_append(readyQueue[prio], newProcess);
+    
+    if (success < 0) {
+        return -1;
+    }
+
+    return newProcess->pid;
+}
+
+void createReport(int pid) {
+    if (pid < 0) {
+        printf("Process creation failed.\n");
+    }
+    else {
+        printf("Process %d successfully created.", &pid);
+    }
+}
 
 
-
+/**---------------------------------------------Fork--------------------------------------------------**/
 
 
 
@@ -58,8 +112,10 @@ bool inputError(char* userInput) {
 int chooseFunction(char input) {       
     switch(input) {
         case 'C':
-            // do something 
+            int pid = createProcessInterface();
+            createReport(pid);
             break;
+
         case 'F':
             // do something
             break;
@@ -99,6 +155,7 @@ int chooseFunction(char input) {
         default:
             return -1;          // no matches
     }
+    return 1;
 }
 
 
@@ -123,7 +180,7 @@ int main() {
             continue;
         }
 
-        
+
 
 
     }
