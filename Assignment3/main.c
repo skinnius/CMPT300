@@ -15,7 +15,7 @@ static List* blockedList;   // queue of processes that are blocked.
 
 static semaphore* semaphores[5];        // 5 semaphores
 static pcb* runningProcess;
-
+static pcb* init;
 
 static long currPID = 0;
 
@@ -43,14 +43,19 @@ void cpu_scheduler() {
         }
 
         pcb* newRunningProcess = List_trim(currList);
+        newRunningProcess->processState = RUNNING;
+
         
+        // add old running process back into a queue
+        List_append(readyQueue[runningProcess->priority], runningProcess);
+        runningProcess->priority = READY;
+        // runningProcess->proc_message = //idk do something with the message
+
+        runningProcess = newRunningProcess;
+        return; 
     }
-
-    runningProcess = 
-
-
-
-
+    // if nothing in queues
+    runningProcess = init;
 }
 
 
@@ -316,10 +321,12 @@ void initializeLists() {
 
 int main() {
     char* userInput;
-    pcb* init = createInitProcess();
+    init = createInitProcess();
     runningProcess = init;
 
     initializeLists();
+
+
     while (runningProcess != NULL) {
         printf("Enter a command: ");
         scanf("%s", &userInput);
