@@ -32,7 +32,7 @@ void freeItem(void* pItem) {
 }
 
 /** ------------------------------------------- Scheduling ------------------------------------------ **/
-// NEED TO FIX STARVATION PROBLEM !!!!
+
 void cpu_scheduler() {
     // go through the three different queue levels
     for (int i = 0; i < 3; i++) {
@@ -43,7 +43,13 @@ void cpu_scheduler() {
 
         pcb* newRunningProcess = List_trim(currList);
         newRunningProcess->processState = RUNNING;
+        if (newRunningProcess->numOccurence == MAX_OCCURENCES && newRunningProcess->priority != 0) {
+            newRunningProcess->priority = newRunningProcess->priority - 1;
+            newRunningProcess->numOccurence = 0;
+        }
 
+
+        newRunningProcess->numOccurence++;
         runningProcess = newRunningProcess;
         return; 
     }
@@ -106,6 +112,7 @@ int createNewProcess(int prio) {
     newProcess->priority = prio;
     newProcess->currentPriority = prio;
     newProcess->processState = READY;
+    newProcess->numOccurence = 0;
     newProcess->message = (proc_message*)malloc(sizeof(proc_message));
 
     int success = List_prepend(readyQueue[prio], newProcess);
@@ -425,6 +432,34 @@ void replyReport(int status) {
 }
 
 
+/** ------------------------------------------- New Semaphore ------------------------------------------ **/
+
+void newSemaphore() {
+    int semaphoreID;
+    int initVal;
+
+    printf("input semaphore ID: ");
+    scanf("%d", &semaphoreID);
+
+    semaphore* s = semaphores[semaphoreID];
+
+    if (semaphoreID != -1) {
+        printf("invalid semaphore id. Semaphore creation failed \n");
+        return -1;
+    }
+
+    printf("input initial value: ");
+    scanf("%s", &initVal);
+
+    s->semaphoreVal = initVal;
+    printf("semaphore successfully created\n");
+    return 0;
+
+}
+
+
+
+
 
 /** ------------------------------------------- User Input------------------------------------------ **/
 
@@ -473,10 +508,10 @@ int chooseFunction(char input) {
             replyReport(replyStatus);
             break;
         case 'N':
-            // do something
+            newSemaphore();
             break;
         case 'P':
-            // do soemthing
+            
             break;
         case 'V':
             // do something
@@ -505,6 +540,7 @@ void initializeLists() {
     for (int i = 0; i < 5; i++) {
         semaphore* curr = semaphores[i];
         curr->processList = List_create();
+        curr->semaphoreVal = -1;
     }
 }
 
@@ -514,7 +550,6 @@ int main() {
     runningProcess = init;
 
     initializeLists();
-
 
     while (runningProcess != NULL) {
         printf("Enter a command: ");

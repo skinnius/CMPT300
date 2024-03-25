@@ -11,9 +11,12 @@
 #define RECEIVE 101
 #define REPLY 102
 
+#define MAX_OCCURENCES 4
+
 // PCB -> controls the processes
 typedef struct PCB {
     long pid;           // process id
+    int numOccurence;   // number of occurences in current priority
     int priority;       // prio (0, 1, 2)
     int currentPriority; // currentPriority may differ from original prio.
     int processState;   // RUNNING, READY, BLOCKED
