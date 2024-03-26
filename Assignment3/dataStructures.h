@@ -15,7 +15,7 @@
 
 // PCB -> controls the processes
 typedef struct PCB {
-    long pid;           // process id
+    int pid;           // process id
     int numOccurence;   // number of occurences in current priority
     int priority;       // prio (0, 1, 2)
     int currentPriority; // currentPriority may differ from original prio.
@@ -26,8 +26,8 @@ typedef struct PCB {
 
 // proc message struct
 typedef struct proc_message {
-    long from;
-    long to;
+    int from;
+    int to;
     int type;
     char *msg;
 

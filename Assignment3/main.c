@@ -16,7 +16,7 @@ static semaphore* semaphores[5];        // 5 semaphores
 static pcb* runningProcess;
 static pcb* init;
 
-static long currPID = 0;
+static int currPID = 0;
 
 /*-------------------------------------- misc -----------------------------------------------------*/
 
@@ -469,7 +469,7 @@ void pSemaphore() {
         printf("invalid input\n");
         return;
     }
-    
+
     semaphore* s = semaphores[semaphoreID];
     s->semaphoreVal--;
     if (s->semaphoreVal < 0) {
@@ -516,8 +516,145 @@ void vSemaphore() {
 /** ------------------------------------------- Procinfo ------------------------------------------ **/
 
 void procInfo() {
+    int pid;
+    printf("input a process id: ");
+    scanf("%d", &pid);
+
+    if (runningProcess->pid == pid) {
+        dumpInfo(runningProcess);
+    }
+
+    // scan through each queue to see if the process exists
+    for (int i = 0; i < 3; i++) {
+        List* currList = readyQueue[i];
+        pcb* p = List_search(currList, equalsComparator, pid);
+        if (p != NULL) {
+            dumpInfo(p);
+        }
+    }
+
+    // scan through receive and send
+    pcb* p = List_search(sendList, equalsComparator, pid);
+    if (p != NULL) {
+        dumpInfo(p);
+    }
+
+    p = List_search(receiveList, equalsComparator, pid);
+    if (p != NULL) {
+        dumpInfo(p);
+    }
+
+    // scan through semaphores
+    for (int i = 0; i < 5; i++) {
+        semaphore* currSem = semaphores[i];
+        List* pList = currSem->processList;
+        pcb* p = List_search(pList, equalsComparator, pid);
+        if (p != NULL) {
+            dumpInfo(p);
+        }
+    }
+
+    // its over
+    printf("No processes with pid %d found", &pid);
 
 }
+
+void dumpInfo(pcb* process) {
+    printf("---------Process %d----------: \n", &process->pid);
+    switch (process->priority) {
+        case 0:
+            printf("high priority \n");
+            break;
+        case 1:
+            printf("medium priority \n");
+            break;
+        case 2: 
+            printf("low priority \n");
+            break;
+    }
+
+    switch (process->processState) {
+        case 0:
+            printf("RUNNING\n");
+            break;
+        case 1:
+            printf("READY\n");
+            break;
+        case 2:
+            printf("BLOCKED\n");
+            break;
+    }    
+}
+
+/** ------------------------------------------- Total Info ------------------------------------------ **/
+void totalInfo() {
+    displayQueues();
+}
+
+void displayQueues() {
+    // display all ready queues
+    printf("~~~~~~~~~~~~~~~~~~~~ READY QUEUES: ~~~~~~~~~~~~~~~~~~~~~~");
+    for (int i = 0; i < 5; i++) {
+        List* currList = readyQueue[i];
+        List_last(currList);
+        
+
+        pcb* p = List_curr(currList);
+        int counter = 1;
+        while (p != NULL) {
+            printf("======= %d ========\n", counter);
+            dumpInfo(p);
+            List_prev(currList);
+            counter++;
+        }
+    }
+
+    // display all send
+    printf("~~~~~~~~~~~~~~~~~~~~ SEND QUEUES: ~~~~~~~~~~~~~~~~~~~~~~");
+    List_last(sendList);
+    pcb* p = List_curr(sendList);
+    int counter = 1;
+
+    while (p != NULL) {
+        printf("========= %d =========\n", counter);
+        dumpInfo(p);
+        List_prev(sendList);
+        counter++;
+    }
+
+    // display all receive
+    printf("~~~~~~~~~~~~~~~~~~~~ RECEIVE QUEUES: ~~~~~~~~~~~~~~~~~~~~~~");
+    List_last(receiveList);
+    pcb* p = List_curr(receiveList);
+    counter = 1;
+
+    while (p != NULL) {
+        printf("========= %d =========\n", counter);
+        dumpInfo(p);
+        List_prev(sendList);
+        counter++;
+    }
+
+
+    printf("~~~~~~~~~~~~~~~~~~~~ SEMAPHORE QUEUES: ~~~~~~~~~~~~~~~~~~~~~~");
+    // display all semaphore queues
+    for (int i = 0; i < 5; i++) {
+        semaphore* currSem = semaphores[i];
+        List* currList = currSem->processList;
+        
+        pcb* p = List_curr(currList);
+        int counter = 1;
+        while (p != NULL) {
+            printf("======= %d ========\n", counter);
+            dumpInfo(p);
+            List_prev(currList);
+            counter++;
+        }
+    }
+
+}
+
+
 
 /** ------------------------------------------- User Input------------------------------------------ **/
 
@@ -578,8 +715,9 @@ int chooseFunction(char input) {
             procInfo();
             break;
         case 'T':
-            // do something
+            totalInfo();
             break;
+
         default:
             return -1;          // no matches
     }
@@ -622,9 +760,6 @@ int main() {
             printf("invalid input");
             continue;
         }
-
-
-
 
     }
 }
