@@ -13,6 +13,13 @@
 
 #define MAX_OCCURENCES 4
 
+// proc message struct
+typedef struct proc_message {
+    int from;
+    int type;
+    char *msg;
+} proc_message;
+
 // PCB -> controls the processes
 typedef struct PCB {
     int pid;           // process id
@@ -22,16 +29,6 @@ typedef struct PCB {
     int processState;   // RUNNING, READY, BLOCKED
     proc_message* message; // proc message
 } pcb;
-
-
-// proc message struct
-typedef struct proc_message {
-    int from;
-    int to;
-    int type;
-    char *msg;
-
-} proc_message;
 
 
 
