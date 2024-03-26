@@ -443,8 +443,8 @@ void newSemaphore() {
 
     semaphore* s = semaphores[semaphoreID];
 
-    if (semaphoreID != -1) {
-        printf("invalid semaphore id. Semaphore creation failed \n");
+    if (s->initialized == true) {
+        printf("semaphore already initialized. Semaphore creation failed \n");
         return -1;
     }
 
@@ -452,14 +452,72 @@ void newSemaphore() {
     scanf("%s", &initVal);
 
     s->semaphoreVal = initVal;
+    s->initialized = true;
     printf("semaphore successfully created\n");
     return 0;
 
 }
 
+/** ------------------------------------------- Semaphore (P) ------------------------------------------ **/
 
+void pSemaphore() {
+    int semaphoreID;
+    printf("input a semaphore id: \n");
+    scanf("%d", &semaphoreID);
 
+    if (semaphoreID < 0 || semaphoreID > 4) {
+        printf("invalid input\n");
+        return;
+    }
+    
+    semaphore* s = semaphores[semaphoreID];
+    s->semaphoreVal--;
+    if (s->semaphoreVal < 0) {
+        List_prepend(s->processList, runningProcess);
+        // block
+        runningProcess->processState = BLOCKED;
+        List_prepend(readyQueue[runningProcess->priority], runningProcess);
+        cpu_scheduler();
+        printf("Previously running process was blocked. Process %d is now running\n", runningProcess->pid);
+    }
+    else {
+        printf("Process was not blocked. Current process is still running \n");
+    }
 
+}
+
+/** ------------------------------------------- Semaphore (V) ------------------------------------------ **/
+
+void vSemaphore() {
+    int semaphoreID;
+    printf("input a semaphore id: \n");
+    scanf("%d", &semaphoreID);
+
+    if (semaphoreID < 0 || semaphoreID > 4) {
+        printf("invalid input\n");
+        return;
+    }
+    
+    semaphore* s = semaphores[semaphoreID];
+    s->semaphoreVal++;
+    if (s->semaphoreVal <= 0) {
+        
+        pcb* unblockedProcess = List_trim(s->processList);
+        unblockedProcess->processState = READY;
+        List_prepend(readyQueue[unblockedProcess->currentPriority], unblockedProcess);
+        cpu_scheduler();
+        printf("Process %d was placed on the ready queue. \n", unblockedProcess->pid);
+    }
+    else {
+        printf("No processes are blocked on semaphore %d \n", &semaphoreID);
+    }
+}
+
+/** ------------------------------------------- Procinfo ------------------------------------------ **/
+
+void procInfo() {
+
+}
 
 /** ------------------------------------------- User Input------------------------------------------ **/
 
@@ -511,13 +569,13 @@ int chooseFunction(char input) {
             newSemaphore();
             break;
         case 'P':
-            
+            pSemaphore();
             break;
         case 'V':
-            // do something
+            vSemaphore();
             break;
         case 'I':
-            // do seomthing 
+            procInfo();
             break;
         case 'T':
             // do something
@@ -540,7 +598,7 @@ void initializeLists() {
     for (int i = 0; i < 5; i++) {
         semaphore* curr = semaphores[i];
         curr->processList = List_create();
-        curr->semaphoreVal = -1;
+        curr->initialized = false;
     }
 }
 

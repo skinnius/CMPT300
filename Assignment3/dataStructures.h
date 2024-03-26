@@ -37,6 +37,7 @@ typedef struct proc_message {
 
 // semaphore structure
 typedef struct semaphore {
+    bool initialized;
     int semaphoreVal;        // value of semaphore
     List* processList;       // list of processes
 
