@@ -59,6 +59,11 @@ void cpu_scheduler() {
 
         newRunningProcess->numOccurence++;
         runningProcess = newRunningProcess;
+
+        if (run) {
+            printf("process %d has control of the CPU\n", runningProcess->pid);
+        }
+
         if (runningProcess->message->type == REPLY) {
             printf("reply received from process %d: \n", runningProcess->message->from);
             printf("\"%s\"\n", runningProcess->message->msg);
@@ -280,10 +285,6 @@ void killProcessInterface() {
 
 void exitProcess() {
     killProcess(runningProcess->pid);
-    if (run) {
-        printf("\nprocess %d has control of the CPU", runningProcess->pid);
-    }
-
 }
 
 /**--------------------------------------------- Quantum --------------------------------------------------**/ 
@@ -292,19 +293,17 @@ void quantum() {
 
     if (runningProcess->pid == 0) {
         cpu_scheduler();
-        printf("process %d has control of the CPU", runningProcess->pid);
         return;
     }
 
     runningProcess->processState = READY;
     List_prepend(readyQueue[runningProcess->currentPriority], runningProcess);
     cpu_scheduler();
-    printf("process %d has control of the CPU", runningProcess->pid);
 }
 
 /**--------------------------------------------- Send --------------------------------------------------**/ 
 
-pcb* attemptSend(List* pList, int pid, char* msg) {
+pcb* attemptSend(List* pList, int pid, char* msg, bool* inList) {
     // empty list case
     if (List_first(pList) == NULL) {
         return NULL;
@@ -313,8 +312,9 @@ pcb* attemptSend(List* pList, int pid, char* msg) {
     pcb* process = List_search(pList, equalsComparator, &pid);
 
     if (process != NULL) {                  // process has been found
-        if (process->message->type == RECEIVE) {
-            printf("process %d already receiving a message", process->pid);
+        if (process->message->type == SEND) {
+            printf("process %d already receiving a message \n", process->pid);
+            *inList = true;
             return NULL;
         }
         List_remove(receiveList);
@@ -349,6 +349,7 @@ int sendInterface() {
 
     int pid;
     char* msg = malloc(40);
+    bool inList = false;
 
     printf("input pid: ");
     scanf("%d", &pid);
@@ -365,21 +366,23 @@ int sendInterface() {
     }
 
     if (pid == 0) {
-        if (init->message->type == RECEIVE) {
-            printf("process %d already receiving a message", init->pid);
+        if (init->message->type == SEND) {
+            printf("process %d already receiving a message\n", init->pid);
+            free(msg);
+            return -1;
         }
         else {
             strcpy(init->message->msg, msg);
             init->message->type = SEND;
             init->message->from = runningProcess->pid;       // came from currently running process
             if (block(sendList) == -1) {free(msg); return -1;}
+            free(msg);
+            return 0;
         }
-        free(msg);
-        return 0;
     }
 
     // check queues waiting on a send (receiveList)
-    pcb* process = attemptSend(receiveList, pid, msg);
+    pcb* process = attemptSend(receiveList, pid, msg, &inList);
     if (process != NULL) {
         // add process waiting on receive back onto the ready queue
         process->processState = READY;
@@ -389,9 +392,17 @@ int sendInterface() {
         return 0;
     }
 
+    // check queues waiting on a reply (sendList)
+    process = attemptSend(sendList, pid, msg, &inList);
+    if (process != NULL) {
+        if (block(sendList) == -1) {free(msg); return -1;}
+        free(msg);
+        return 0;
+    }
+
     // check ready queues for process.
     for (int i = 0; i < 3; i++) {
-        pcb* process = attemptSend(readyQueue[i], pid, msg); 
+        pcb* process = attemptSend(readyQueue[i], pid, msg, &inList); 
         if (process != NULL) {
             if (block(sendList) == -1) {free(msg); return -1;}
             free(msg);
@@ -403,22 +414,24 @@ int sendInterface() {
     // check semaphore queues for process.
     for (int i = 0; i < 5; i++) {
         semaphore* s = semaphores[i];
-        pcb* process = attemptSend(s->processList, pid, msg);
+        pcb* process = attemptSend(s->processList, pid, msg, &inList);
         if (process != NULL) {
             if (block(sendList) == -1) {free(msg); return -1;}
             free(msg);
             return 0;
         }
     }
+
     // no matches
-    printf("could not find any processes with pid %d\n", pid);
+    if (!inList) {
+        printf("could not find any processes with pid %d\n", pid);
+    }
     free(msg);
     return -1;
 }
 
 
 
-// make the reports nice later
 void sendReport(int status) {
     if (status == -1) {
         printf("failed to send");
@@ -671,8 +684,8 @@ void procInfo() {
 
     // scan through each queue to see if the process exists
     for (int i = 0; i < 3; i++) {
-        List* currList = readyQueue[i];
-        pcb* p = List_search(currList, equalsComparator, &pid);
+        List_first(readyQueue[i]);
+        pcb* p = List_search(readyQueue[i], equalsComparator, &pid);
         if (p != NULL) {
             dumpInfo(p);
             return;
@@ -680,12 +693,14 @@ void procInfo() {
     }
 
     // scan through receive and send
+    List_first(sendList);
     pcb* p = List_search(sendList, equalsComparator, &pid);
     if (p != NULL) {
         dumpInfo(p);
         return;
     }
 
+    List_first(receiveList);
     p = List_search(receiveList, equalsComparator, &pid);
     if (p != NULL) {
         dumpInfo(p);
@@ -696,6 +711,7 @@ void procInfo() {
     for (int i = 0; i < 5; i++) {
         semaphore* currSem = semaphores[i];
         List* pList = currSem->processList;
+        List_first(pList);
         pcb* p = List_search(pList, equalsComparator, &pid);
         if (p != NULL) {
             dumpInfo(p);

@@ -1,0 +1,13 @@
+-------------------------------------------- OS DOCUMENTATION -------------------------------------------------
+mla387
+301544039
+
+Design Choices for init:
+
+I gave init the ability to call P (if the semaphore doesn't block init), R (if there is a message sent to init), Y, and V, alongside the other commands that are permitted with init (from the assignment description). Since init should never block, I removed it's ability to call S, and R (if there aren't any messages sent to init). 
+
+
+Design Choices for send/receive/reply:
+
+One process can only receive one message. An error pops up if a process attempts to send something to another process already receiving a message. Furthermore, processes are not able to send
+to themselves. 
