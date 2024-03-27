@@ -1,13 +1,22 @@
 -------------------------------------------- OS DOCUMENTATION -------------------------------------------------
-mla387
-301544039
+--> Design Choices for init:
 
-Design Choices for init:
-
-I gave init the ability to call P (if the semaphore doesn't block init), R (if there is a message sent to init), Y, and V, alongside the other commands that are permitted with init (from the assignment description). Since init should never block, I removed it's ability to call S, and R (if there aren't any messages sent to init). 
+I gave init the ability to call P (if the semaphore doesn't block init), R (if there is a message sent to init), Y, and V, alongside the other commands that are permitted with init (from   the assignment description). Since init should never block, I removed it's ability to call S, and R (if there aren't any messages sent to init). 
 
 
-Design Choices for send/receive/reply:
+--> Design Choices for send/receive/reply:
 
 One process can only receive one message. An error pops up if a process attempts to send something to another process already receiving a message. Furthermore, processes are not able to send
 to themselves. 
+
+--> Design Choices for Starvation:
+
+I implemented a Multilevel Feedback Queue to solve the starvation problem. After a process has been scheduled for 4 cpu bursts at its current priority, it will be demoted to a lower priority 
+(provided it's not already at the lowest priority) where it will stay for the rest of the simulation. However, a fork call will copy the processes' original priority (before demotion). 
+
+--> Design Choices for output (procInfo, totalInfo)
+
+For procInfo, I just included the relevant information of the process (pid, priority, status). 
+For totalInfo, I categorized the output, putting all of the processes in the same queues together. I chose not to display the separate ready queues, as I had the status of the process 
+printed. For semaphores, I made sure to put the blocked proceses into their respective semaphores.  
+
