@@ -68,6 +68,8 @@ pcb* createInitProcess() {
     init->pid = currPID;
     currPID++;
     init->processState = RUNNING;
+    init->message = (proc_message*)malloc(sizeof(proc_message));
+    init->message->msg = (char*)malloc(40);
 
     return init;
 }
@@ -92,6 +94,8 @@ int createNewProcess(int prio) {
     newProcess->processState = READY;
     newProcess->numOccurence = 0;
     newProcess->message = (proc_message*)malloc(sizeof(proc_message));
+    newProcess->message->msg = (char*)malloc(40);
+
 
     int success = List_prepend(readyQueue[prio], newProcess);
     
@@ -132,36 +136,29 @@ void createReport(int pid) {
 
 /**--------------------------------------------- Fork --------------------------------------------------**/
 
-// returns -1 on failure, pid on success. 
-int forkCommandInterface() {
+void forkReport(int pid, int priority) {
+    printf("Fork command successful. Process %d has priority %d", pid, priority);
+}
+
+
+void forkCommandInterface() {
 
     if (runningProcess->pid == 0) {         // 0 = pid of init
-        return -1;
-    }
-
-    pcb* processCopy = (pcb*)malloc(sizeof(pcb));
-    processCopy->pid = currPID;
-    currPID++;
-    processCopy->priority = runningProcess->currentPriority;
-    processCopy->processState = READY;
-
-    int success = List_prepend(readyQueue[processCopy->priority], processCopy);
-
-    if (success < 0) {
-        return -1;
-    }
-
-    return processCopy->pid;
-}
-
-void forkReport(int successState) {
-    if (successState < 0) {
+        printf("Cannot Fork the init process.\n");
         printf("Fork command failed. \n");
+        return;
     }
-    else {
-        printf("Fork command successful. pid of the new process is %d", successState);
+
+    int pid = createNewProcess(runningProcess->priority);
+
+    if (pid < 0) {
+        printf("Fork command failed. \n");
+        return;
     }
+
+    forkReport(pid, runningProcess->priority);
 }
+
 
 
 /**--------------------------------------------- Kill --------------------------------------------------**/ 
@@ -181,38 +178,33 @@ int removeProcessInList(List* pList, int* pid) {
 
 void killReport(int num, int id) {
     if (num < 0) {
-        printf("Kill failed");
+        printf("Kill failed\n");
     }
     else if (num == 0) {
-        printf("No process with matching id found");
+        printf("No process with matching id found\n");
     }
     else {
-        printf("%d instances of process %d killed", num, id);
+        printf("%d instances of process %d killed\n", num, id);
     }
 }
 
 
-int killProcess(int pid) {
+void killProcess(int pid) {
 
     if (pid == 0) {
         if (List_count(readyQueue[0]) == 0 && List_count(readyQueue[1]) == 0 && List_count(readyQueue[2]) == 0) {
-            for (int i = 0; i < 3; i++) {
-                List_free(readyQueue[i], free);
-            }
-            List_free(sendList, free);
-            List_free(receiveList, free);
-
-            for (int i = 0; i < 5; i++) {
-                List_free(semaphores[i]->processList, free);
-                free(semaphores[i]);
-            }
+            free(runningProcess->message->msg);
+            free(runningProcess->message);
+            free(runningProcess);
+            runningProcess = NULL;
             run = false;
-            return 1;
+            killReport(1, pid);
+            return;
         }
 
         else {
             printf("Cannot kill init process while other processes are still on ready queue\n");
-            return -1;
+            return;
         }
     }
 
@@ -220,6 +212,8 @@ int killProcess(int pid) {
     
     // check running process
     if (runningProcess->pid == pid) {
+        free(runningProcess->message->msg);
+        free(runningProcess->message);
         free(runningProcess);
         runningProcess = NULL;
         occurenceCounter += 1;
@@ -245,7 +239,8 @@ int killProcess(int pid) {
         occurenceCounter += removeProcessInList(currList, &pid);
     }
 
-    return occurenceCounter;
+    killReport(occurenceCounter, pid);
+
 }
 
 void killProcessInterface() {
@@ -253,9 +248,7 @@ void killProcessInterface() {
 
     printf("input pid: ");
     scanf("%d", &pid);
-
-    int occurenceCounter = killProcess(pid);
-    killReport(occurenceCounter, pid);
+    killProcess(pid);
 }
 
 
@@ -272,7 +265,10 @@ void killProcessInterface() {
 
 void exitProcess() {
     killProcess(runningProcess->pid);
-    printf("process %d has control of the CPU", runningProcess->pid);
+    if (run) {
+        printf("process %d has control of the CPU", runningProcess->pid);
+    }
+
 }
 
 /**--------------------------------------------- Quantum --------------------------------------------------**/ 
@@ -697,8 +693,7 @@ int chooseFunction(char input) {
             break;
 
         case 'F':
-            fork = forkCommandInterface();
-            forkReport(fork);
+            forkCommandInterface();
             break;
 
         case 'K':
@@ -761,6 +756,21 @@ void initializeLists() {
     }
 }
 
+
+void freeLists() {
+    for (int i = 0; i < 3; i++) {
+        List_free(readyQueue[i], free);
+    }
+
+    List_free(sendList, free);
+    List_free(receiveList, free);
+
+    for (int i = 0; i < 5; i++) {
+        List_free(semaphores[i]->processList, free);
+        free(semaphores[i]);
+    }
+}
+
 int main() {
     char userInput;
     init = createInitProcess();
@@ -781,6 +791,8 @@ int main() {
         printf("\n");
     }
 
+    // free stuff
+    freeLists();
     printf("skinOS simulation terminated :D\n");
 
 }
