@@ -32,6 +32,13 @@ void freeItem(void* pItem) {
     pItem = NULL;
 }
 
+
+void resetMessage() {
+    runningProcess->message->from = 0;
+    runningProcess->message->type = 0;
+    strcpy(runningProcess->message->msg, "");
+}
+
 /** ------------------------------------------- Scheduling ------------------------------------------ **/
 
 void cpu_scheduler() {
@@ -55,6 +62,7 @@ void cpu_scheduler() {
         if (runningProcess->message->type == REPLY) {
             printf("reply received from process %d: \n", runningProcess->message->from);
             printf("\"%s\"\n", runningProcess->message->msg);
+            resetMessage();
         }
         return; 
     }
@@ -72,9 +80,13 @@ pcb* createInitProcess() {
     init->pid = currPID;
     currPID++;
     init->processState = RUNNING;
+    init->priority = -1;
+    init->currentPriority = -1;
+    init->numOccurence = -1;
+
     init->message = (proc_message*)malloc(sizeof(proc_message));
     init->message->msg = (char*)malloc(40);
-    init->priority = -1;
+    init->message->type = 0;
     return init;
 }
 
@@ -96,8 +108,11 @@ int createNewProcess(int prio) {
     newProcess->currentPriority = prio;
     newProcess->processState = READY;
     newProcess->numOccurence = 0;
+
     newProcess->message = (proc_message*)malloc(sizeof(proc_message));
     newProcess->message->msg = (char*)malloc(40);
+    newProcess->message->type = 0;
+
     int success = List_prepend(readyQueue[prio], newProcess);
     
     if (success < 0) {
@@ -302,6 +317,7 @@ pcb* attemptSend(List* pList, int pid, char* msg) {
             printf("process %d already receiving a message", process->pid);
             return NULL;
         }
+        List_remove(receiveList);
         strcpy(process->message->msg, msg);
         process->message->type = SEND;
         process->message->from = runningProcess->pid;       // came from currently running process
@@ -344,6 +360,7 @@ int sendInterface() {
 
     if (strlen(msg) > 40) {
         printf("message too long.\n");
+        free(msg);
         return -1;
     }
 
@@ -414,13 +431,6 @@ void sendReport(int status) {
 /**--------------------------------------------- Receive --------------------------------------------------**/
 // return 0 for block, 1 for no block. 
 
-void resetMessage() {
-    runningProcess->message->from = 0;
-    runningProcess->message->type = 0;
-    strcpy(runningProcess->message->msg, "");
-}
-
-
 
 void receive() {
 
@@ -475,6 +485,11 @@ int replyInterface() {
     printf("input message (40 characters max): \n");
     scanf(" %[^\n]", msg);
 
+    if (strlen(msg) > 40) {
+        printf("message too long.\n");
+        free(msg);
+        return -1;
+    }
 
     List_first(sendList);
     pcb* process = List_search(sendList, equalsComparator, &pid);
@@ -488,9 +503,10 @@ int replyInterface() {
         // add process waiting on reply back onto the ready queue
         process->processState = READY;
         List_prepend(readyQueue[process->currentPriority], process);
+        free(msg);
         return 0;
     }
-
+    free(msg);
     return -1;
 }
 
@@ -518,6 +534,7 @@ void newSemaphore() {
 
     if (s->initialized == true) {
         printf("semaphore already initialized. Semaphore creation failed \n");
+        return;
     }
 
     printf("input initial value: ");
@@ -541,7 +558,8 @@ void pSemaphore() {
     }
 
     if (semaphores[semaphoreID]->initialized == false) {
-        printf("semaphore %d not yet initialized.", semaphoreID);
+        printf("semaphore %d not yet initialized.\n", semaphoreID);
+        printf("P failed.");
         return;
     }
 
@@ -552,6 +570,7 @@ void pSemaphore() {
         if (runningProcess->pid == 0) {
             printf("init cannot be blocked. Current process is still running.\n");
             printf("P failed.");
+            s->semaphoreVal++;
             return;
         }
         block(s->processList);
@@ -560,7 +579,7 @@ void pSemaphore() {
         printf("Process was not blocked. Current process is still running \n");
     }
 
-    printf("P successful. Semaphore %d value has incremented to %d", semaphoreID, s->semaphoreVal);
+    printf("P successful. Semaphore %d value has decremented to %d", semaphoreID, s->semaphoreVal);
 }
 
 
@@ -587,13 +606,17 @@ void vSemaphore() {
     if (s->semaphoreVal <= 0) {
         
         pcb* unblockedProcess = List_trim(s->processList);
-        unblockedProcess->processState = READY;
-        List_prepend(readyQueue[unblockedProcess->currentPriority], unblockedProcess);
-        cpu_scheduler();
-        printf("Process %d was placed on the ready queue. \n", unblockedProcess->pid);
+        if (unblockedProcess != NULL) {
+            unblockedProcess->processState = READY;
+            List_prepend(readyQueue[unblockedProcess->currentPriority], unblockedProcess);
+            printf("Process %d was placed on the ready queue. \n", unblockedProcess->pid);
+        }
+        else {
+            printf("No processes were unblocked from semaphore %d \n", semaphoreID);
+        }
     }
     else {
-        printf("No processes are blocked on semaphore %d \n", semaphoreID);
+        printf("No processes were unblocked from semaphore %d \n", semaphoreID);
     }
     printf("V Successful. Semaphore %d value has incremented to %d", semaphoreID, s->semaphoreVal);
 }
@@ -688,7 +711,7 @@ void procInfo() {
 /** ------------------------------------------- Total Info ------------------------------------------ **/
 void displayQueues() {
     // display all ready queues
-    printf("~~~~~~~~~~~~~~~~~~~~ READY QUEUES: ~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("~~~~~~~~~~~~~~~~~~~~ READY QUEUES: ~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     for (int i = 0; i < 3; i++) {
         List* currList = readyQueue[i];
         pcb* p = List_last(currList);
@@ -699,7 +722,7 @@ void displayQueues() {
     }
 
     // display all send
-    printf("~~~~~~~~~~~~~~~~~~~~ SEND QUEUES: ~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("~~~~~~~~~~~~~~~~~~~~ SEND QUEUES: ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     pcb* p = List_last(sendList);
 
     while (p != NULL) {
@@ -806,6 +829,7 @@ void initializeLists() {
         semaphores[i] = malloc(sizeof(semaphore));
         semaphores[i]->processList = List_create();
         semaphores[i]->initialized = false;
+        semaphores[i]->semaphoreVal = 0;
     }
 }
 
