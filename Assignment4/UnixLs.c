@@ -11,18 +11,23 @@
 #include <sys/stat.h>
 
 // valid flag checker
-bool isValidFlagChar(char c) {
-    if (c == 'l' || c == 'i') {
+bool testSetValidFlagChar(char c, bool* iSeen, bool* lSeen) {
+    if (c == 'l') {
+        *lSeen = true;
         return true;
     }
+    if (c == 'i') {
+        *iSeen = true;
+        return true;
+    }
+
     return false;
 }
 
 // for basic ls command
 void printBasicDir(char* entryDir[], int len) {
-    struct stat buf;
-    DIR* dir;
-    struct dirent *dp;
+    DIR* dir = NULL;
+    struct dirent *dp = NULL;
 
     for (int i = 0; i < len; i++) {
         dir = opendir(entryDir[i]);
@@ -36,11 +41,7 @@ void printBasicDir(char* entryDir[], int len) {
             if (dp->d_name[0] == '.') { // ensures that hidden files are not displayed
                 continue;
             }
-            int status = stat(dp->d_name, &buf);
-            if (status == -1) {
-                printf("an error occured when retrieving the info of this file\n");
-                continue;
-            }
+
             printf("%s\n", dp->d_name);
         }
         printf("\n");
@@ -51,9 +52,62 @@ void printBasicDir(char* entryDir[], int len) {
     }
 }
 
+ino_t* iFlag(char* entryDir[], int len) {
+    ino_t* inodeArr = malloc(len*sizeof(int));
+    struct stat buf;
+    DIR* dir = NULL;
+    struct dirent *dp = NULL;
+    int arrIndex = 0;
+
+    for (int i = 0; i < len; i++) {
+        dir = opendir(entryDir[i]);
+
+        if (dir == NULL) {
+            printf("an error occured\n");
+            continue;
+        }
+
+        while ((dp = readdir(dir)) != NULL) {
+            if (dp->d_name[0] == '.') {
+                continue;
+            }
+
+            if (stat(dp->d_name, &buf) == -1) {
+                printf("an error occured when retrieving the info of this file\n");
+                continue;
+            }
+
+            inodeArr[arrIndex++] = buf.st_ino;
+        }
+    }
+    if (dir != NULL) {
+        closedir(dir);
+    }
+     
+    return inodeArr;
+
+}
+
 
 // -i, --inode = print the index number of each file
 
+bool inFlag(char* s, char c) {
+    if (s == NULL) {
+        return false;
+    }
+
+    int i = 0;
+    while (s[i] != 0) {
+        if (c == s[i]) {
+            return true;
+        }
+        i++;
+    }
+    return false;
+}
+
+
+// printing lists
 void printList(char* list[]) {
     int i = 0;
     while (list[i] != 0) {
@@ -62,21 +116,20 @@ void printList(char* list[]) {
     }
 }
 
-
 int main(int argc, char *argv[]) {
     bool isFlag = true;
     int numFlags = argc - 1;
     char* dirList[numFlags];
-    char* flagList[numFlags];   
+    char flag[3];   
     int dirListIndex = 0;
     int flagListIndex = 0;
 
 
     memset(dirList, 0, sizeof(dirList));
-    memset(flagList, 0, sizeof(flagList));
+    memset(flag, 0, sizeof(flag));
 
 
-    if (numFlags == 0) {                    // basic ls
+    if (numFlags == 0) {                    // basic ls with no options
         char* d[1] = {"."};
         printBasicDir(d, 1);
         return 0;    
@@ -87,32 +140,51 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        bool iSeen = false;
+        bool lSeen = false;
         int j = 0;
+
         char c = argv[i][j];                // parse through string to determine if it is a valid flag. 
         if (c != '-') {
             isFlag = false;
         }
 
         c = argv[i][++j];
-
         while (c != '\0') {
-            if (isFlag && !isValidFlagChar(c)) {
+            if (isFlag && !testSetValidFlagChar(c, &iSeen, &lSeen)) {
                 isFlag = false;
             }
             c = argv[i][++j];
         }
 
-        if (isFlag) {
-            flagList[flagListIndex] = argv[i]; 
-            flagListIndex++;
+        if (isFlag && flagListIndex < 3) {
+            if (iSeen && !inFlag(flag, 'i')) {
+                flag[flagListIndex++] = 'i';
+            }
+
+            if (lSeen && !inFlag(flag, 'l')){
+                flag[flagListIndex++] = 'l';
+            }
         }
         else {
-            dirList[dirListIndex] = argv[i];
-            dirListIndex++;
+            dirList[dirListIndex++] = argv[i];
         }
     }
+
+
+
+    // ------------------------- PROCESSING FLAGS ----------------------------------
+
+    // first account for flags
+    // for (int i = 0; i < flagListIndex; i++) {
+    //     char* flag = flagList[i];
+        
+        
+    // }
+
+
     printf("------- flags: -------------\n");
-    printList(flagList);
+    printf("%s\n", flag);
 
     printf("--------dir------------\n");
     printList(dirList);
