@@ -52,12 +52,10 @@ void printBasicDir(char* entryDir[], int len) {
     }
 }
 
-ino_t* iFlag(char* entryDir[], int len) {
-    ino_t* inodeArr = malloc(len*sizeof(int));
+void lsPrint(char* entryDir[], int len) {
     struct stat buf;
     DIR* dir = NULL;
     struct dirent *dp = NULL;
-    int arrIndex = 0;
 
     for (int i = 0; i < len; i++) {
         dir = opendir(entryDir[i]);
@@ -77,14 +75,12 @@ ino_t* iFlag(char* entryDir[], int len) {
                 continue;
             }
 
-            inodeArr[arrIndex++] = buf.st_ino;
+            printf("%lu %s\n", buf.st_ino, dp->d_name);
         }
     }
     if (dir != NULL) {
         closedir(dir);
     }
-     
-    return inodeArr;
 
 }
 
@@ -116,13 +112,36 @@ void printList(char* list[]) {
     }
 }
 
+
+// flag processing
+int processFlag(char* flag, int numFlags, char* entryDir[], int numDir) {
+    for (int i = 0; i < numFlags; i++) {
+        if (numDir == 0) {
+            char* entry[1] = {"."};
+            
+            if (flag[i] == 'i') {
+                lsPrint(entry, 1);
+            }
+        }
+
+        if (flag[i] == 'i') {
+            // iFlag();
+        }        
+    }
+    return 0;
+}
+
+
+
+
+
 int main(int argc, char *argv[]) {
     bool isFlag = true;
     int numFlags = argc - 1;
     char* dirList[numFlags];
     char flag[3];   
     int dirListIndex = 0;
-    int flagListIndex = 0;
+    int flagIndex = 0;
 
 
     memset(dirList, 0, sizeof(dirList));
@@ -157,13 +176,13 @@ int main(int argc, char *argv[]) {
             c = argv[i][++j];
         }
 
-        if (isFlag && flagListIndex < 3) {
+        if (isFlag && flagIndex < 3) {
             if (iSeen && !inFlag(flag, 'i')) {
-                flag[flagListIndex++] = 'i';
+                flag[flagIndex++] = 'i';
             }
 
             if (lSeen && !inFlag(flag, 'l')){
-                flag[flagListIndex++] = 'l';
+                flag[flagIndex++] = 'l';
             }
         }
         else {
@@ -174,20 +193,13 @@ int main(int argc, char *argv[]) {
 
 
     // ------------------------- PROCESSING FLAGS ----------------------------------
+    processFlag(flag, flagIndex, dirList, dirListIndex);
+    
+    // printf("------- flags: -------------\n");
+    // printf("%s\n", flag);
 
-    // first account for flags
-    // for (int i = 0; i < flagListIndex; i++) {
-    //     char* flag = flagList[i];
-        
-        
-    // }
-
-
-    printf("------- flags: -------------\n");
-    printf("%s\n", flag);
-
-    printf("--------dir------------\n");
-    printList(dirList);
+    // printf("--------dir------------\n");
+    // printList(dirList);
 
 
 
