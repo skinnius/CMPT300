@@ -758,6 +758,8 @@ void displayQueues() {
     printf("~~~~~~~~~~~~~~~~~~~~ SEMAPHORE QUEUES: ~~~~~~~~~~~~~~~~~~~~~~\n");
     // display all semaphore queues
     for (int i = 0; i < 5; i++) {
+
+        printf("========= Semaphore %d ========== \n", i);
         semaphore* currSem = semaphores[i];
         List* currList = currSem->processList;
         
