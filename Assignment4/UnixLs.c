@@ -9,6 +9,7 @@
 #include <pwd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 // valid flag checker
 bool testSetValidFlagChar(char c, bool* iSeen, bool* lSeen) {
@@ -20,31 +21,80 @@ bool testSetValidFlagChar(char c, bool* iSeen, bool* lSeen) {
         *iSeen = true;
         return true;
     }
-
     return false;
 }
 
+
+void printlflag(struct dirent* dp, struct stat buf) {
+    // code taken and adapted from https://www.gnu.org/software/libc/manual/html_node/Permission-Bits.html
+    printf((S_ISDIR(buf.st_mode)) ? "d" : "-");
+    printf((buf.st_mode & S_IRUSR) ? "r" : "-");
+    printf((buf.st_mode & S_IWUSR) ? "w" : "-");
+    printf((buf.st_mode & S_IXUSR) ? "x" : "-");
+    printf((buf.st_mode & S_IRGRP) ? "r" : "-");
+    printf((buf.st_mode & S_IWGRP) ? "w" : "-");
+    printf((buf.st_mode & S_IXGRP) ? "x" : "-");
+    printf((buf.st_mode & S_IROTH) ? "r" : "-");
+    printf((buf.st_mode & S_IWOTH) ? "w" : "-");
+    printf((buf.st_mode & S_IXOTH) ? "x" : "-");
+
+    // nlink
+    printf(" %lu ", buf.st_nlink);
+    printf(" ");
+}
+
+void printliflag(struct dirent* dp, struct stat buf) {
+    // do stuff
+}
+
+void printnoflag(struct dirent* dp) {
+    printf("%s\n", dp->d_name);
+}
+
+void printiflag(struct dirent* dp, struct stat buf) {
+    printf("%lu %s\n", buf.st_ino, dp->d_name);
+}
+
 // for basic ls command
-void printBasicDir(char* entryDir[], int len) {
+void printBasicDir(char* flag) {
     DIR* dir = NULL;
     struct dirent *dp = NULL;
+    struct stat buf;
 
-    for (int i = 0; i < len; i++) {
-        dir = opendir(entryDir[i]);
+    dir = opendir(".");
+    if (dir == NULL) {
+        printf("%s\n", strerror(errno));
+        return;
+    }
 
-        if (dir == NULL) {
-            printf("an error occured\n");
+    while ((dp = readdir(dir)) != NULL) {
+
+        char* path = malloc(strlen(dp->d_name) + 3);
+        strcpy(path, "./");
+        strcat(path, dp->d_name);
+        
+        if (stat(path, &buf) == -1) {
+            printf("%s\n", strerror(errno));
+            return;
+        }
+
+        free(path);
+        if (dp->d_name[0] == '.') { // ensures that hidden files are not displayed
             continue;
         }
 
-        while ((dp = readdir(dir)) != NULL) {
-            if (dp->d_name[0] == '.') { // ensures that hidden files are not displayed
-                continue;
-            }
-
-            printf("%s\n", dp->d_name);
+        if (strcmp(flag, "i") == 0) {
+            printiflag(dp, buf);
         }
-        printf("\n");
+        else if (strcmp(flag, "l") == 0) {
+            printlflag(dp, buf);
+        } 
+        else if (strcmp(flag, "il") == 0 || strcmp(flag, "li") == 0){
+            printliflag(dp, buf);
+        }
+        else {
+            printnoflag(dp);
+        }
     }
 
     if (dir != NULL) {
@@ -52,40 +102,61 @@ void printBasicDir(char* entryDir[], int len) {
     }
 }
 
-void lsPrint(char* entryDir[], int len) {
+
+void lsPrint(int len, char* entryDir[], char* flag) {
     struct stat buf;
-    DIR* dir = NULL;
     struct dirent *dp = NULL;
+    DIR* dir = NULL;
 
     for (int i = 0; i < len; i++) {
-        dir = opendir(entryDir[i]);
+        
+        char* fullPath = malloc(strlen(entryDir[i]) + 3);
+        strcpy(fullPath, "./"); 
+        strcat(fullPath, entryDir[i]);
+
+        dir = opendir(fullPath);
 
         if (dir == NULL) {
-            printf("an error occured\n");
-            continue;
+            printf("%s\n", strerror(errno));
+            return;
         }
-
+               
         while ((dp = readdir(dir)) != NULL) {
             if (dp->d_name[0] == '.') {
                 continue;
             }
 
-            if (stat(dp->d_name, &buf) == -1) {
-                printf("an error occured when retrieving the info of this file\n");
+            char* path = malloc(strlen(fullPath) + strlen(dp->d_name) + 2);
+            strcpy(path, fullPath);
+            strcat(path, "/");
+            strcat(path, dp->d_name);
+
+            if (stat(path, &buf) == -1) {
+                printf("%s\n", strerror(errno));
                 continue;
             }
+            free(path);
 
-            printf("%lu %s\n", buf.st_ino, dp->d_name);
+            if (strcmp(flag, "i") == 0) {
+                printiflag(dp, buf);
+            }
+            else if (strcmp(flag, "l") == 0) {
+                printlflag(dp, buf);
+            } 
+            else if (strcmp(flag, "il") == 0 || strcmp(flag, "li") == 0){
+                printliflag(dp, buf);
+            }
+            else {
+                printnoflag(dp);
+            }
+        }
+
+        free(fullPath);
+        if (dir != NULL) {
+            closedir(dir);
         }
     }
-    if (dir != NULL) {
-        closedir(dir);
-    }
-
 }
-
-
-// -i, --inode = print the index number of each file
 
 bool inFlag(char* s, char c) {
     if (s == NULL) {
@@ -112,26 +183,17 @@ void printList(char* list[]) {
     }
 }
 
-
 // flag processing
-int processFlag(char* flag, int numFlags, char* entryDir[], int numDir) {
-    for (int i = 0; i < numFlags; i++) {
-        if (numDir == 0) {
-            char* entry[1] = {"."};
-            
-            if (flag[i] == 'i') {
-                lsPrint(entry, 1);
-            }
-        }
+int processFlag(char* flag, char* entryDir[], int numDir) {
 
-        if (flag[i] == 'i') {
-            // iFlag();
-        }        
+    if (numDir == 0) {
+        printBasicDir(flag);
+    }
+    else {
+        lsPrint(numDir, entryDir, flag);
     }
     return 0;
 }
-
-
 
 
 
@@ -149,11 +211,10 @@ int main(int argc, char *argv[]) {
 
 
     if (numFlags == 0) {                    // basic ls with no options
-        char* d[1] = {"."};
-        printBasicDir(d, 1);
+        printBasicDir("z");
         return 0;    
     }
-     
+    
     for (int i = 1; i < argc; i++) {        // get all arguments from command line
         if (argv[i] == NULL) {
             continue;
@@ -191,16 +252,8 @@ int main(int argc, char *argv[]) {
     }
 
 
-
     // ------------------------- PROCESSING FLAGS ----------------------------------
-    processFlag(flag, flagIndex, dirList, dirListIndex);
-    
-    // printf("------- flags: -------------\n");
-    // printf("%s\n", flag);
-
-    // printf("--------dir------------\n");
-    // printList(dirList);
-
+    processFlag(flag, dirList, dirListIndex);
 
 
 
