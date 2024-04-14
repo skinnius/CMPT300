@@ -10,6 +10,8 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <time.h>
+
 
 // valid flag checker
 bool testSetValidFlagChar(char c, bool* iSeen, bool* lSeen) {
@@ -38,10 +40,17 @@ void printlflag(struct dirent* dp, struct stat buf) {
     printf((buf.st_mode & S_IWOTH) ? "w" : "-");
     printf((buf.st_mode & S_IXOTH) ? "x" : "-");
 
-    // nlink
-    printf(" %lu ", buf.st_nlink);
-    printf(" ");
+    time_t t = buf.st_mtime;
+    char timeString[18];
+    strftime(timeString, sizeof(timeString), "%Y-%m-%d %H:%M", localtime(&t));
+
+    printf("%2lu %1s %1s %11ld %s\n", 
+            buf.st_nlink, getpwuid(buf.st_uid)->pw_name, getgrgid(buf.st_gid)->gr_name,
+            buf.st_size, timeString);
 }
+    
+// , buf.st_mtime
+// %02d:%02d
 
 void printliflag(struct dirent* dp, struct stat buf) {
     // do stuff
@@ -172,17 +181,6 @@ bool inFlag(char* s, char c) {
     }
     return false;
 }
-
-
-// printing lists
-void printList(char* list[]) {
-    int i = 0;
-    while (list[i] != 0) {
-        printf("%s\n", list[i]);
-        i++;
-    }
-}
-
 // flag processing
 int processFlag(char* flag, char* entryDir[], int numDir) {
 
@@ -250,13 +248,8 @@ int main(int argc, char *argv[]) {
             dirList[dirListIndex++] = argv[i];
         }
     }
-
-
     // ------------------------- PROCESSING FLAGS ----------------------------------
     processFlag(flag, dirList, dirListIndex);
-
-
-
 
     return 0;
 }
