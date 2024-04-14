@@ -27,9 +27,13 @@ bool testSetValidFlagChar(char c, bool* iSeen, bool* lSeen) {
 }
 
 
-void printlflag(struct dirent* dp, struct stat buf) {
+void printlflag(struct dirent* dp, char* path, struct stat buf) {
+    time_t t = buf.st_mtime;
+    char timeString[18];
+    char* linkBuffer = malloc(buf.st_size + 1);
+
     // code taken and adapted from https://www.gnu.org/software/libc/manual/html_node/Permission-Bits.html
-    printf((S_ISDIR(buf.st_mode)) ? "d" : "-");
+    printf((S_ISLNK(buf.st_mode)) ? "l" : (S_ISDIR(buf.st_mode)) ? "d" : "-");
     printf((buf.st_mode & S_IRUSR) ? "r" : "-");
     printf((buf.st_mode & S_IWUSR) ? "w" : "-");
     printf((buf.st_mode & S_IXUSR) ? "x" : "-");
@@ -40,20 +44,69 @@ void printlflag(struct dirent* dp, struct stat buf) {
     printf((buf.st_mode & S_IWOTH) ? "w" : "-");
     printf((buf.st_mode & S_IXOTH) ? "x" : "-");
 
-    time_t t = buf.st_mtime;
-    char timeString[18];
-    strftime(timeString, sizeof(timeString), "%Y-%m-%d %H:%M", localtime(&t));
+    strftime(timeString, sizeof(timeString), "%b %d %Y %H:%M", localtime(&t));
 
-    printf("%2lu %1s %1s %11ld %s\n", 
+    if (S_ISLNK(buf.st_mode)) {
+        ssize_t len = readlink(path, linkBuffer, buf.st_size + 1);
+        if (len == -1) {
+            printf("%s\n", strerror(errno));
+            free(linkBuffer);
+            return;
+        }
+        linkBuffer[len] = '\0';
+        printf("%11lu %1s %15s %11ld %s %s -> %s\n", 
             buf.st_nlink, getpwuid(buf.st_uid)->pw_name, getgrgid(buf.st_gid)->gr_name,
-            buf.st_size, timeString);
+            buf.st_size, timeString, dp->d_name, linkBuffer);
+    }
+    else {
+        printf("%11lu %1s %15s %11ld %s %s\n", 
+                buf.st_nlink, getpwuid(buf.st_uid)->pw_name, getgrgid(buf.st_gid)->gr_name,
+                buf.st_size, timeString, dp->d_name);
+    }
+
+    free(linkBuffer);
+
 }
     
-// , buf.st_mtime
-// %02d:%02d
 
-void printliflag(struct dirent* dp, struct stat buf) {
-    // do stuff
+void printliflag(struct dirent* dp, char* path, struct stat buf) {
+    time_t t = buf.st_mtime;
+    char timeString[18];
+    char* linkBuffer = malloc(buf.st_size + 1);
+
+    // code taken and adapted from https://www.gnu.org/software/libc/manual/html_node/Permission-Bits.html
+    printf((S_ISLNK(buf.st_mode)) ? "l" : (S_ISDIR(buf.st_mode)) ? "d" : "-");
+    printf((buf.st_mode & S_IRUSR) ? "r" : "-");
+    printf((buf.st_mode & S_IWUSR) ? "w" : "-");
+    printf((buf.st_mode & S_IXUSR) ? "x" : "-");
+    printf((buf.st_mode & S_IRGRP) ? "r" : "-");
+    printf((buf.st_mode & S_IWGRP) ? "w" : "-");
+    printf((buf.st_mode & S_IXGRP) ? "x" : "-");
+    printf((buf.st_mode & S_IROTH) ? "r" : "-");
+    printf((buf.st_mode & S_IWOTH) ? "w" : "-");
+    printf((buf.st_mode & S_IXOTH) ? "x" : "-");
+
+    strftime(timeString, sizeof(timeString), "%b %d %Y %H:%M", localtime(&t));
+
+    if (S_ISLNK(buf.st_mode)) {
+        ssize_t len = readlink(path, linkBuffer, buf.st_size + 1);
+        if (len == -1) {
+            printf("%s\n", strerror(errno));
+            free(linkBuffer);
+            return;
+        }
+        linkBuffer[len] = '\0';
+        printf("%11lu %11lu %1s %15s %11ld %s %s -> %s\n", 
+            buf.st_ino, buf.st_nlink, getpwuid(buf.st_uid)->pw_name, getgrgid(buf.st_gid)->gr_name,
+            buf.st_size, timeString, dp->d_name, linkBuffer);
+    }
+    else {
+    printf("%11lu %11lu %1s %15s %11ld %s %s\n", 
+            buf.st_ino, buf.st_nlink, getpwuid(buf.st_uid)->pw_name, getgrgid(buf.st_gid)->gr_name,
+            buf.st_size, timeString, dp->d_name);
+    }
+
+    free(linkBuffer);
 }
 
 void printnoflag(struct dirent* dp) {
@@ -64,67 +117,32 @@ void printiflag(struct dirent* dp, struct stat buf) {
     printf("%lu %s\n", buf.st_ino, dp->d_name);
 }
 
-// for basic ls command
-void printBasicDir(char* flag) {
-    DIR* dir = NULL;
-    struct dirent *dp = NULL;
-    struct stat buf;
-
-    dir = opendir(".");
-    if (dir == NULL) {
-        printf("%s\n", strerror(errno));
-        return;
-    }
-
-    while ((dp = readdir(dir)) != NULL) {
-
-        char* path = malloc(strlen(dp->d_name) + 3);
-        strcpy(path, "./");
-        strcat(path, dp->d_name);
-        
-        if (stat(path, &buf) == -1) {
-            printf("%s\n", strerror(errno));
-            return;
-        }
-
-        free(path);
-        if (dp->d_name[0] == '.') { // ensures that hidden files are not displayed
-            continue;
-        }
-
-        if (strcmp(flag, "i") == 0) {
-            printiflag(dp, buf);
-        }
-        else if (strcmp(flag, "l") == 0) {
-            printlflag(dp, buf);
-        } 
-        else if (strcmp(flag, "il") == 0 || strcmp(flag, "li") == 0){
-            printliflag(dp, buf);
-        }
-        else {
-            printnoflag(dp);
-        }
-    }
-
-    if (dir != NULL) {
-        closedir(dir);
-    }
-}
-
 
 void lsPrint(int len, char* entryDir[], char* flag) {
     struct stat buf;
+    struct stat entryCheck;
     struct dirent *dp = NULL;
     DIR* dir = NULL;
 
     for (int i = 0; i < len; i++) {
-        
-        char* fullPath = malloc(strlen(entryDir[i]) + 3);
-        strcpy(fullPath, "./"); 
-        strcat(fullPath, entryDir[i]);
+        if (len > 1) {
+            if (i > 0) {
+                printf("\n");
+            }
+            printf("%s:\n", entryDir[i]);
+        }
 
-        dir = opendir(fullPath);
+        if (lstat(entryDir[i], &entryCheck) == -1) {
+            printf("%s\n", strerror(errno));
+            continue;
+        }
 
+        else if (!S_ISDIR(entryCheck.st_mode)) {
+            printf("%s \n", entryDir[i]);
+            continue;
+        }
+
+        dir = opendir(entryDir[i]);
         if (dir == NULL) {
             printf("%s\n", strerror(errno));
             return;
@@ -135,32 +153,32 @@ void lsPrint(int len, char* entryDir[], char* flag) {
                 continue;
             }
 
-            char* path = malloc(strlen(fullPath) + strlen(dp->d_name) + 2);
-            strcpy(path, fullPath);
-            strcat(path, "/");
-            strcat(path, dp->d_name);
+            char* fullPath = malloc(strlen(entryDir[i]) + strlen(dp->d_name) + 2);
+            strcpy(fullPath, entryDir[i]);
+            strcat(fullPath, "/"); 
+            strcat(fullPath, dp->d_name);
 
-            if (stat(path, &buf) == -1) {
+            if (lstat(fullPath, &buf) == -1) {
                 printf("%s\n", strerror(errno));
                 continue;
             }
-            free(path);
 
             if (strcmp(flag, "i") == 0) {
                 printiflag(dp, buf);
             }
             else if (strcmp(flag, "l") == 0) {
-                printlflag(dp, buf);
+                printlflag(dp, fullPath, buf);
             } 
             else if (strcmp(flag, "il") == 0 || strcmp(flag, "li") == 0){
-                printliflag(dp, buf);
+                printliflag(dp, fullPath, buf);
             }
             else {
                 printnoflag(dp);
             }
+
+            free(fullPath);
         }
 
-        free(fullPath);
         if (dir != NULL) {
             closedir(dir);
         }
@@ -185,7 +203,9 @@ bool inFlag(char* s, char c) {
 int processFlag(char* flag, char* entryDir[], int numDir) {
 
     if (numDir == 0) {
-        printBasicDir(flag);
+        char* entry[1] = {"."};
+        lsPrint(1, entry, flag);
+        return 0;  
     }
     else {
         lsPrint(numDir, entryDir, flag);
@@ -197,8 +217,8 @@ int processFlag(char* flag, char* entryDir[], int numDir) {
 
 int main(int argc, char *argv[]) {
     bool isFlag = true;
-    int numFlags = argc - 1;
-    char* dirList[numFlags];
+    int numArgs = argc - 1;
+    char* dirList[numArgs];
     char flag[3];   
     int dirListIndex = 0;
     int flagIndex = 0;
@@ -208,8 +228,9 @@ int main(int argc, char *argv[]) {
     memset(flag, 0, sizeof(flag));
 
 
-    if (numFlags == 0) {                    // basic ls with no options
-        printBasicDir("z");
+    if (numArgs == 0) {                    // basic ls with no options
+        char* entry[1] = {"."};
+        lsPrint(1, entry, "z");
         return 0;    
     }
     
