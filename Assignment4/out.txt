@@ -1,0 +1,107 @@
+./UnixLs -ilil . .. ~ > out.txt:
+
+.:
+-rwx------     144753           1 mla387    domain users         933 Apr 12 2024 04:05 infodemo.c
+-rwx------     144755           1 mla387    domain users         112 Apr 13 2024 20:35 Makefile
+-rwx------     150100           1 mla387    domain users       28448 Apr 13 2024 23:29 UnixLs
+-rwx------     144752           1 mla387    domain users        7618 Apr 13 2024 23:28 UnixLs.c
+drwx------     144758           2 mla387    domain users           0 Apr 12 2024 15:14 test1
+drwx------     144759           2 mla387    domain users           0 Apr 12 2024 13:05 test3
+-rwx------     150233           1 mla387    domain users           0 Apr 13 2024 23:33 out.txt
+
+..:
+drwx------     146010           2 mla387    domain users           0 Jun 08 2022 16:21 pub_html
+drwx------     146016           2 mla387    domain users           0 Aug 14 2023 00:55 CMPT 295
+drwx------     146017           2 mla387    domain users           0 Jul 24 2023 12:58 CMPT 225
+-rwx------     146019           1 mla387    domain users         324 Jan 08 2024 15:00 test.c
+-rwx------     146021           1 mla387    domain users       19520 Jan 08 2024 15:01 test
+drwx------     146022           2 mla387    domain users           0 Feb 02 2024 01:20 Assignment1
+drwx------     146023           2 mla387    domain users           0 Mar 27 2024 12:36 Assignment3
+drwx------     146024           2 mla387    domain users           0 Mar 01 2024 13:47 Assignment2
+drwx------     144749           2 mla387    domain users           0 Apr 13 2024 23:32 Assignment4
+
+/home/mla387:
+drwx------     144748           2 mla387    domain users           0 Apr 12 2024 03:11 sfuhome
+lrwxrwxrwx 6580498036           1 mla387 cmpt-csil-users          39 Jan 12 2023 09:42 Android -> /usr/shared/CMPT/scratch/mla387/Android
+lrwxrwxrwx 6580498041           1 mla387 cmpt-csil-users          42 Jan 12 2023 09:42 VirtualBox VMs -> /usr/shared/CMPT/scratch/mla387/VirtualBox
+drwxr-xr-x 2234247339           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:42 Desktop
+drwxr-xr-x 4336495086           8 mla387 cmpt-csil-users         262 Mar 25 2024 11:12 Downloads
+drwxr-xr-x 6580553861           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:42 Templates
+drwxr-xr-x 2234247340           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:42 Public
+drwxr-xr-x 4336495087           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:42 Documents
+drwxr-xr-x 6580553862           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:42 Music
+drwxr-xr-x  257641982           2 mla387 cmpt-csil-users         214 May 31 2023 14:46 Pictures
+drwxr-xr-x 4336495090           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:42 Videos
+drwxr-xr-x 6611779042           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:56 Download_p
+drwxr-xr-x  256262567           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:57 file.txt
+drwxr-xr-x 6617641799           2 mla387 cmpt-csil-users          10 Jan 12 2023 09:58 sepid.txt
+drwx------ 6725873683           2 mla387 cmpt-csil-users          10 Mar 25 2024 23:31 snap
+
+./UnixLs -i >> out.txt:
+
+144753 infodemo.c
+144755 Makefile
+150100 UnixLs
+144752 UnixLs.c
+144758 test1
+144759 test3
+150233 out.txt
+
+./UnixLs -l >> out.txt: 
+
+-rwx------          1 mla387    domain users         933 Apr 12 2024 04:05 infodemo.c
+-rwx------          1 mla387    domain users         112 Apr 13 2024 20:35 Makefile
+-rwx------          1 mla387    domain users       28448 Apr 13 2024 23:29 UnixLs
+-rwx------          1 mla387    domain users        7618 Apr 13 2024 23:28 UnixLs.c
+drwx------          2 mla387    domain users           0 Apr 12 2024 15:14 test1
+drwx------          2 mla387    domain users           0 Apr 12 2024 13:05 test3
+-rwx------          1 mla387    domain users        3250 Apr 13 2024 23:36 out.txt
+
+./UnixLs . .. ~  >> out.txt: 
+
+.:
+infodemo.c
+Makefile
+UnixLs
+UnixLs.c
+test1
+test3
+out.txt
+
+..:
+pub_html
+CMPT 295
+CMPT 225
+test.c
+test
+Assignment1
+Assignment3
+Assignment2
+Assignment4
+
+/home/mla387:
+sfuhome
+Android
+VirtualBox VMs
+Desktop
+Downloads
+Templates
+Public
+Documents
+Music
+Pictures
+Videos
+Download_p
+file.txt
+sepid.txt
+snap
+
+./UnixLs . .. ~  >> out.txt
+
+ohHellNah
+
+./UnixLs test1 >> out.txt
+
+test2
+bruh
+bruh.txt
